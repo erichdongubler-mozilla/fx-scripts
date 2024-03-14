@@ -15,6 +15,11 @@ export def process-reports [
 
 	alias debug = info
 
+	let in_dir = do {
+		let path_sep_chars = [$'\(char path_sep)' '\/'] | uniq
+		$in_dir | str replace --regex $"[($path_sep_chars)]$" ""
+	}
+
 	if $remove_old {
 		try {
 			rm -r $in_dir
