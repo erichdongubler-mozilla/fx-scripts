@@ -15,6 +15,12 @@ export def process-reports [
 
 	alias debug = info
 
+	if (which ruplacer | is-empty) {
+		error make --unspanned {
+			msg: "`ruplacer` binary not found in `$PATH`, bailing"
+		}
+	}
+
 	let in_dir = do {
 		let path_sep_chars = [$'\(char path_sep)' '\/'] | uniq
 		$in_dir | str replace --regex $"[($path_sep_chars)]$" ""
@@ -41,6 +47,12 @@ export def process-reports [
 
 	info "Processing reports…"
 	moz-webgpu-cts process-reports --glob ([$in_dir "/**/*wptreport.json"] | str join) --preset $preset
+
+	info "Applying some fixups so time-out intermittent subtests always have `[TIMEOUT, NOTRUN]`…"
+	let webgpu_meta_path = "testing/web-platform/mozilla/meta/webgpu/"
+	ruplacer '( {6}.*: .*)(PASS, |FAIL, |\[)(TIMEOUT|NOTRUN)(\]|$)' '$1${2}TIMEOUT, NOTRUN]' $webgpu_meta_path --go
+	ruplacer '( {6}.*): (NOTRUN|TIMEOUT)' '$1: [TIMEOUT, NOTRUN]' $webgpu_meta_path --go
+	moz-webgpu-cts fmt
 
 	info "Done!"
 }
