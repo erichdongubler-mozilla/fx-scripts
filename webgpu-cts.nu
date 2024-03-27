@@ -41,4 +41,6 @@ export def process-reports [
 
 	info "Processing reports…"
 	moz-webgpu-cts process-reports --glob ([$in_dir "/**/*wptreport.json"] | str join) --preset $preset
+
+	info "Done!"
 }
