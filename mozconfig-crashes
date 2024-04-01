@@ -1,0 +1,5 @@
+# Erich's config for building and testing crashes
+
+ac_add_options --with-ccache=sccache
+ac_add_options --enable-debug
+ac_add_options --disable-optimize

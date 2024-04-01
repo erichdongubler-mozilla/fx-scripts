@@ -1,13 +1,13 @@
 export def wgpu_repo_pkgs [] {
 	let wgpu_repo_url = "https://github.com/gfx-rs/wgpu"
-	let id_pat = ["{name} {ver} (git+" $wgpu_repo_url "?rev={rev}#{_rev_frag}"] | str join
+	let id_pat = ["git+" $wgpu_repo_url "?rev={rev}#{name}@{ver}"] | str join
 	^cargo metadata --format-version 1 --locked
 		| from json
 		| get packages
 		| where source != null
 		| where {|pkg| $pkg.source =~ $wgpu_repo_url }
 		| each {|pkg|
-			let parsed_id = $pkg.id | parse $id_pat | reject _rev_frag | first
+			let parsed_id = $pkg.id | parse $id_pat | first
 			{
 				name: $pkg.name
 				version: ($parsed_id | [$in.ver "@git:" $in.rev] | str join)
