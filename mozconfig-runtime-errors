@@ -1,0 +1,4 @@
+# Erich's config for building and testing runtime errors.
+
+ac_add_options --with-ccache=sccache
+ac_add_options --enable-debug
