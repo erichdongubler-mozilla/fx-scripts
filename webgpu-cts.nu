@@ -50,8 +50,12 @@ export def process-reports [
 
 	info "Applying some fixups so time-out intermittent subtests always have `[TIMEOUT, NOTRUN]`…"
 	let webgpu_meta_path = "testing/web-platform/mozilla/meta/webgpu/"
-	ruplacer '( {6}.*: .*)(PASS, |FAIL, |\[)(TIMEOUT|NOTRUN)(\]|$)' '$1${2}TIMEOUT, NOTRUN]' $webgpu_meta_path --go
-	ruplacer '( {6}.*): (NOTRUN|TIMEOUT)' '$1: [TIMEOUT, NOTRUN]' $webgpu_meta_path --go
+	try {
+		ruplacer '( {6}.*: .*)(PASS, |FAIL, |\[)(TIMEOUT|NOTRUN)(\]|$)' '$1${2}TIMEOUT, NOTRUN]' $webgpu_meta_path --go
+	}
+	try {
+		ruplacer '( {6}.*): (NOTRUN|TIMEOUT)' '$1: [TIMEOUT, NOTRUN]' $webgpu_meta_path --go
+	}
 	moz-webgpu-cts fmt
 
 	info "Done!"
