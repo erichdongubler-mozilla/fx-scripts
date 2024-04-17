@@ -7,7 +7,7 @@ export def "webgpu ci dl-reports" [
 
 export def "webgpu ci process-reports" [
 	--remove-old,
-	--preset: string,
+	--preset: string@"webgpu ci process-reports preset",
 	--in-dir: string = "./wpt/",
 	...revisions: string,
 ] {
@@ -48,4 +48,14 @@ export def "webgpu ci process-reports" [
 	info "Processing reports…"
 	moz-webgpu-cts process-reports --glob ([$in_dir "/**/*wptreport.json"] | str join) --preset $preset
 	info "Done!"
+}
+
+def "webgpu ci process-reports preset" [] {
+	[
+		"new-fx"
+		"same-fx"
+		"merge"
+		"reset-contradictory"
+		"reset-all"
+	]
 }
