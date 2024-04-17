@@ -1,11 +1,11 @@
-export def dl-reports [
+export def "webgpu ci dl-reports" [
 	--in-dir: string,
 	...revisions: string,
 ] {
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --max-parallel 50 --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions
 }
 
-export def process-reports [
+export def "webgpu ci process-reports" [
 	--remove-old,
 	--preset: string,
 	--in-dir: string = "./wpt/",
@@ -33,7 +33,7 @@ export def process-reports [
 	}
 
 	info "Downloading reports…"
-	dl-reports --in-dir $in_dir ...$revisions
+	webgpu ci dl-reports --in-dir $in_dir ...$revisions
 
 	debug "Deleting empty reports…"
 	let empty_deleted = ls wpt/**/*wptreport.json |
