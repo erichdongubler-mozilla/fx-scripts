@@ -36,9 +36,11 @@ export def "webgpu ci process-reports" [
 	webgpu ci dl-reports --in-dir $in_dir ...$revisions
 
 	debug "Deleting empty reports…"
-	let empty_deleted = ls wpt/**/*wptreport.json |
-		filter {|entry| $entry.size == 0B } |
-		each {|entry|
+	let wptreport_file_glob = 
+		[$in_dir "**/*wptreport.json"] | path join | str replace --all '\' '/' | into glob
+	let empty_deleted = ls $wptreport_file_glob
+		| filter {|entry| $entry.size == 0B }
+		| each {|entry|
 			rm $entry.name; $entry.name
 		}
 	for $entry in $empty_deleted {
@@ -46,7 +48,7 @@ export def "webgpu ci process-reports" [
 	}
 
 	info "Processing reports…"
-	moz-webgpu-cts process-reports --glob ([$in_dir "/**/*wptreport.json"] | str join) --preset $preset
+	moz-webgpu-cts process-reports --glob ($wptreport_file_glob | into string) --preset $preset
 	info "Done!"
 }
 
