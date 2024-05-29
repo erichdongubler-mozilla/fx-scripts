@@ -8,7 +8,7 @@ export def "webgpu ci dl-reports" [
 export def "webgpu ci process-reports" [
 	--remove-old,
 	--preset: string@"webgpu ci process-reports preset",
-	--in-dir: string = "./wpt/",
+	--in-dir: string = "../wpt/",
 	...revisions: string,
 ] {
 	use std log [debug, info]
