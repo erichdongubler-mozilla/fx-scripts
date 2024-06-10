@@ -5,6 +5,7 @@ def notify [body: string] {
 export def main [] {
 	mach clobber
 	try {
+		# # TODO: expose as `--scm-level=1`?
 		# load-env {
 		# 	MOZ_SCM_LEVEL: "1"
 		# }
