@@ -1,5 +1,8 @@
+def notify [body: string] {
+	printf "\e]777;notify;%s;%s\e\\" "title" "body"
+}
+
 export def main [] {
-	use erichdongubler wezterm notify
 	mach clobber
 	try {
 		# load-env {
