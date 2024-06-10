@@ -23,7 +23,7 @@ export def main [
 	let old_metadata = (wgpu_repo_pkgs)
 
 	let cmd = "mach"
-	mut args = [vendor --ignore-modified gfx/wgpu_bindings/moz.yaml]
+	mut args = [vendor gfx/wgpu_bindings/moz.yaml]
 	if $revision != null {
 		$args = ($args | append ["--revision" $revision])
 	}
