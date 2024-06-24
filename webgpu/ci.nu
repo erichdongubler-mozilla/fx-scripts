@@ -3,6 +3,14 @@ use std/log
 const WPT_REPORT_ARTIFACT_PATH = 'public/test_info/wptreport.json'
 const WPT_INSTRUMENTS_ARTIFACT_PATH = 'public/test_info/wpt_instruments.txt'
 
+def moz-webgpu-cts --wrapped [...args] {
+ let bin_path = ls ~/workspace/mozilla/tools/moz-webgpu-cts/target/release/moz-webgpu-cts*
+  | where ($it.name | path basename) in ['moz-webgpu-cts' 'moz-webgpu-cts.exe']
+  | first
+  | get name
+ run-external $bin_path ...$args
+}
+
 def quote-args-for-debugging []: list<string> -> string {
   each { $'"($in)"' } | str join ' '
 }
