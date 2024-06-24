@@ -1,7 +1,5 @@
 use std log [debug, info]
 
-alias debug = info
-
 export def "webgpu ci dl-reports" [
 	--in-dir: string,
 	...revisions: string,
