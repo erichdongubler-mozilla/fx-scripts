@@ -6,6 +6,8 @@ use $TIME
 const WEBGPU_BUG = path self "../webgpu/bug.nu"
 use $WEBGPU_BUG
 
+const WGPU_REPO_URL = 'https://github.com/gfx-rs/wgpu'
+
 export def "bindings begin-revendor" [
   --bug: oneof<nothing, int, string> = null,
   --revision: oneof<nothing, string> = null,
@@ -34,7 +36,7 @@ export def "bindings begin-revendor" [
 
   if not (
     $moz_yaml.vendoring.flavor == 'rust' and
-    $moz_yaml.vendoring.url == 'https://github.com/gfx-rs/wgpu' and
+    $moz_yaml.vendoring.url == $WGPU_REPO_URL and
     true
   ) {
     error make --unspanned {
