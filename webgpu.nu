@@ -1,5 +1,7 @@
 use std log [debug, info]
 
+alias moz-webgpu-cts = ~/workspace/mozilla/moz-webgpu-cts/target/release/moz-webgpu-cts
+
 def quote-args-for-debugging []: list<string> -> string {
 	$in | each { ['"' $in '"'] | str join } | str join ' '
 }
