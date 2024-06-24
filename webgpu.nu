@@ -14,6 +14,12 @@ export def "webgpu ci dl-logs" [
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/logs/live_backing.log' --out-dir $in_dir ...$revisions
 }
 
+def "webgpu ci wptreport-glob" [in_dir: path] {
+	[$in_dir "**/wptreport.json"] |
+		path join |
+		str replace --all '\' '/' | into glob
+}
+
 export def "webgpu ci update-expected" [
 	--remove-old,
 	--preset: string@"webgpu ci process-reports preset",
@@ -41,9 +47,7 @@ export def "webgpu ci update-expected" [
 	webgpu ci dl-reports --in-dir $in_dir ...$revisions
 
 	debug "Deleting empty reports…"
-	let wptreport_file_glob = [$in_dir "**/*wptreport.json"] |
-		path join |
-		str replace --all '\' '/' | into glob
+	let wptreport_file_glob = webgpu ci wptreport-glob $in_dir
 	let empty_deleted = ls $wptreport_file_glob
 		| filter {|entry| $entry.size == 0B }
 		| each {|entry|
