@@ -4,7 +4,7 @@ export def "webgpu ci dl-reports" [
 	--in-dir: string,
 	...revisions: string,
 ] {
-	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --max-parallel 50 --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions
+	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions
 }
 
 export def "webgpu ci process-reports" [
