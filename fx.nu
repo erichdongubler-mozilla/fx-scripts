@@ -43,3 +43,44 @@ export def "bootstrap lines-to-disable" [] {
 		"# ac_add_options --without-wasm-sandboxed-libraries"
 	]
 }
+
+# Certify Rust crates for usage in Mozilla source using `cargo vet -- certify`, returning the
+# suggested commit message for the audits you perform
+#
+# # Examples
+#
+# - `git commit -m (fx certify [hashlink 0.9.0 0.10.0])`
+# - `jj commit -m (fx certify --bug 99999999 [hashlink 0.9.0 0.10.0])`
+export def "certify" [
+	recs: list<list<string>>, 
+	# A list of lists of positional arguments to provide to `cargo vet certify …` invocations.
+	#
+	# Typically, you'll want to provide `[$crate $version]` or `[$crate $old_version $new_version]`
+	#
+	# You do not need to specify `--accept-all` or `--criteria=safe-to-deploy` here; this is already
+	# done for you.
+	--reviewers (-r): list<string> = [],
+	# Reviewer(s) to set for a revision message. `#supply-chain-reviewers` is always appended to
+	# this list.
+	--bug: int | null = null,
+	# The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
+	# rendered commit message.
+]: nothing -> string {
+	for args in $recs {
+		cargo vet certify --accept-all --criteria safe-to-deploy -- ...$args
+	}
+
+	let list_summary = $recs | each {
+		$'`($in.0)` ($in | slice 1.. | str join " → ")'
+	} | str join ', '
+
+	let bug = if $bug == null {
+	  "???????"
+	} else {
+	  $bug | into string
+	}
+
+	let reviewers = $reviewers | append "#supply-chain-reviewers"
+
+	$"Bug ($bug) - chore: audit ($list_summary) r=($reviewers | str join ',')"
+}
