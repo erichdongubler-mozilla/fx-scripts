@@ -43,3 +43,25 @@ export def "bootstrap lines-to-disable" [] {
 		"# ac_add_options --without-wasm-sandboxed-libraries"
 	]
 }
+
+# Certify Rust crates for usage in Mozilla source using `mach cargo vet -- certify`.
+#
+# Returns the suggested commit message for the audits you perform, i.e.:
+#
+# - `git commit -m (fx certify --bug 99999999 [hashlink 0.9.0 0.10.0])`
+# - `jj commit -m (fx certify --bug 99999999 [hashlink 0.9.0 0.10.0])`
+export def "certify" [
+	--bug: int, # The Bugzilla bug number to use for a revision message.
+	--reviewers (-r): list<string> = ["#supply-chain-reviewers"], # Reviewer(s) to set for a revision message.
+	recs: list<list<string>>, # A list of lists of positional arguments to provide to `cargo vet -- certify …` invocations.
+]: nothing -> string {
+	for args in $recs {
+		cargo vet certify --accept-all --criteria safe-to-deploy -- ...$args
+	}
+
+	let list_summary = $recs | each {
+		$'`($in.0)` ($in | range 1.. | str join " → ")'
+	} | str join ', '
+
+	$"Bug ($bug) - chore: audit ($list_summary) r=($reviewers | str join ',')"
+}
