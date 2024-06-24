@@ -7,7 +7,7 @@ export def "webgpu ci dl-reports" [
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions
 }
 
-export def "webgpu ci process-reports" [
+export def "webgpu ci update-expected" [
 	--remove-old,
 	--preset: string@"webgpu ci process-reports preset",
 	--in-dir: string = "../wpt/",
@@ -47,7 +47,7 @@ export def "webgpu ci process-reports" [
 	}
 
 	info "Processing reports…"
-	moz-webgpu-cts process-reports --glob ($wptreport_file_glob | into string) --preset $preset
+	moz-webgpu-cts update-expected --glob ($wptreport_file_glob | into string) --preset $preset
 	info "Done!"
 }
 
