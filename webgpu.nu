@@ -1,3 +1,7 @@
+use std log [debug, info]
+
+alias debug = info
+
 export def "webgpu ci dl-reports" [
 	--in-dir: string,
 	...revisions: string,
@@ -11,10 +15,6 @@ export def "webgpu ci process-reports" [
 	--in-dir: string = "../wpt/",
 	...revisions: string,
 ] {
-	use std log [debug, info]
-
-	alias debug = info
-
 	if (which ruplacer | is-empty) {
 		error make --unspanned {
 			msg: "`ruplacer` binary not found in `$PATH`, bailing"
