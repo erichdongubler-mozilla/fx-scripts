@@ -169,3 +169,64 @@ export def "crates-from-bindings-moz.yaml" [
     )
   }
 }
+
+export def "bindings use-local-wgpu" [
+  --path: oneof<directory, nothing> = null,
+] {
+  use std/log [] # set up `log` cmd. state
+
+  log debug "Fetching crates to patch from bindings deps…"
+  let crates = (
+    open (bindings moz.yaml path)
+      | crates-from-bindings-moz.yaml
+      | get crates
+      | select name
+  )
+  log debug $"Working with the following crates: ($crates | to nuon --indent 2)"
+
+  let local_crates = if $path == null {
+    let third_party_rust_dir = './third_party/rust'
+    log info $"Using workspace members from `($third_party_rust_dir)/`…"
+    log warning "NOTE that this approach is broken since `wgpu-core` has crates in its subdirectories!"
+    $crates | upsert abs_path {|row| $'($third_party_rust_dir)/($row.name)' }
+  } else {
+    let cargo_toml_path = $path | path join 'Cargo.toml'
+    log info $"Fetching workspace members from `($cargo_toml_path)`…"
+    workspace-members --path $cargo_toml_path | select name abs_path
+  }
+
+  $crates
+    | join $local_crates --left name
+    | reduce --fold {} {|crate, acc|
+      $acc | upsert $crate.name { path: $crate.abs_path }
+    }
+    | wrap $'($WGPU_REPO_URL).git'
+    | wrap patch
+    | to toml
+    | save --append Cargo.toml
+
+  cargo update ...($crates | get name | each { ['--package' $in] } | flatten)
+  print "You are now ready to run `mach vendor rust`!"
+}
+
+def "workspace-members" [
+  --path: directory,
+]: nothing -> record<> {
+  (
+    cargo metadata --format-version 1
+      --manifest-path $path
+      | from json
+      | get workspace_members
+      | parse 'path+file://{abs_path}#{version_fragment}'
+      | update version_fragment {|entry|
+        parse --regex '(?:(?P<name>[a-zA-Z0-9-]+)@)?(?P<version>\d+\.\d+\.\d+)'
+          | first
+          | update name {
+            if ($in | is-empty) {
+              ($entry.abs_path | path basename)
+            } else { $in }
+          }
+      }
+      | flatten version_fragment
+  )
+}
