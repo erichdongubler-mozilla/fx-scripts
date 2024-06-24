@@ -71,3 +71,63 @@ def "webgpu ci process-reports preset" [] {
 		"reset-all"
 	]
 }
+
+export def "webgpu ci search wpt by-test-message" [
+	term: string,
+	--in-dir: string = "../wpt/",
+] {
+	let files = (ls (webgpu ci wptreport-glob $in_dir) | where type == file) | get name | sort
+	let predicate = { $in | default "" | str contains $term }
+
+	$files
+		| par-each --keep-order {|file|
+			use std
+			std log info $"searching ($file)"
+			open $file
+				| get results
+				| where {
+					($in.message | do $predicate) or ($in.subtests | any { $in.message | do $predicate })
+				}
+				| each {
+					{ file: $file test: $in }
+				}
+		}
+		| webgpu ci search wpt clean-search-results $in_dir
+}
+
+export def "webgpu ci search wpt by-test-name" [
+	term: string,
+	--in-dir: string = "../wpt/",
+] {
+	let files = (ls (webgpu ci wptreport-glob $in_dir) | where type == file) | get name | sort
+
+	$files
+		| par-each --keep-order {|file|
+			open $file
+				| get results
+				| where { $in.test | str contains $term }
+				| each {
+					{ file: $file test: $in }
+				}
+		}
+		| webgpu ci search wpt clean-search-results $in_dir
+}
+
+def "webgpu ci search wpt clean-search-results" [in_dir: string] {
+	flatten
+	| update file {
+		$in
+			| str replace ($in_dir | path expand) ''
+			| str replace ([public test_info wptreport.json] | path join) ''
+	}
+	| flatten
+	| each {|entry|
+		$entry | try {
+			$entry | update test {
+				['https://example.com' $in] | str join | url parse | get params | get q
+			}
+		} catch {
+			$entry
+		}
+	}
+}
