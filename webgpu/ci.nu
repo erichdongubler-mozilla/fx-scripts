@@ -1,5 +1,13 @@
 use std/log
 
+def moz-webgpu-cts --wrapped [...args] {
+ let bin_path = ls ~/workspace/mozilla/tools/moz-webgpu-cts/target/release/moz-webgpu-cts*
+  | where ($it.name | path basename) in ['moz-webgpu-cts' 'moz-webgpu-cts.exe']
+  | first
+  | get name
+ run-external $bin_path ...$args
+}
+
 def quote-args-for-debugging []: list<string> -> string {
   each { $'"($in)"' } | str join ' '
 }
