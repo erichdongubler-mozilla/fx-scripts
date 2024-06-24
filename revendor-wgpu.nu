@@ -1,7 +1,7 @@
 export def wgpu_repo_pkgs [] {
 	let wgpu_repo_url = "https://github.com/gfx-rs/wgpu"
 	let id_pat = ["git+" $wgpu_repo_url "?rev={rev}#{name}@{ver}"] | str join
-	^cargo metadata --format-version 1 --locked
+	^cargo metadata --format-version 1
 		| from json
 		| get packages
 		| where source != null
