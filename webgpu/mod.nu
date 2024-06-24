@@ -2,6 +2,8 @@ export module revendor-wgpu.nu
 
 use std/log
 
+alias moz-webgpu-cts = ~/workspace/mozilla/tools/moz-webgpu-cts/target/release/moz-webgpu-cts
+
 def quote-args-for-debugging []: list<string> -> string {
 	$in | each { ['"' $in '"'] | str join } | str join ' '
 }
