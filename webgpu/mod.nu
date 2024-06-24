@@ -1,5 +1,7 @@
 use std/log
 
+alias moz-webgpu-cts = ~/workspace/mozilla/tools/moz-webgpu-cts/target/release/moz-webgpu-cts
+
 export def "begin-revendor cts" [
 	--bug: oneof<nothing, int, string> = null,
 	--revision: oneof<nothing, string> = null,
