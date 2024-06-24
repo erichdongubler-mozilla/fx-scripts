@@ -7,6 +7,13 @@ export def "webgpu ci dl-reports" [
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions
 }
 
+export def "webgpu ci dl-logs" [
+	--in-dir: string = "../wpt/",
+	...revisions: string,
+] {
+	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/logs/live_backing.log' --out-dir $in_dir ...$revisions
+}
+
 export def "webgpu ci update-expected" [
 	--remove-old,
 	--preset: string@"webgpu ci process-reports preset",
