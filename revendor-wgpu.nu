@@ -28,7 +28,7 @@ export def main [
 		$args = ($args | append ["--revision" $revision])
 	}
 	let args = $args
-	info "running `mach vendor gfx/wgpu_bindings/moz.yaml`…"
+	info $"running `([$cmd] | append $args | str join ' ')`…"
 	let vendor_output = (do { run-external $cmd ...$args } o+e>| complete)
 	if $vendor_output.exit_code != 0 {
 		error make --unspanned { msg: "failed to re-vendor, bailing" }
