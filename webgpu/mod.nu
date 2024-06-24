@@ -2,6 +2,8 @@ export module revendor-wgpu.nu
 
 use std/log
 
+alias moz-webgpu-cts = ~/workspace/mozilla/tools/moz-webgpu-cts/target/release/moz-webgpu-cts
+
 export def "bug create" [input: record<summary: string type: string>] {
 	const BUGZILLA = path self "../bugzilla.nu"
 	use $BUGZILLA
