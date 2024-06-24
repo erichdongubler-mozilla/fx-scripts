@@ -161,3 +161,35 @@ def "ci search wpt clean-search-results" [in_dir: string] {
 		}
 	}
 }
+
+export def "src crates-from-wgpu" [] {
+	[
+		d3d12
+		naga
+		wgpu-core
+		wgpu-hal
+		wgpu-types
+	]
+}
+
+export def "src use-local" [] {
+	log info "Fetching crates from the `wgpu` repo…"
+	let crates = (src crates-from-wgpu)
+	log info (["Working with the following crates: " ($crates | to nuon)] | str join)
+
+	# let patch_entries =  | reduce --fold {} {|crate acc|
+	# 	$acc | upsert $crate { path: (["./third_party/rust/" $crate "/"] | str join) }
+	# }
+	# echo {} | upsert patch."https://github.com/gfx-rs/wgpu.git" $patch_entries | to toml | save --append Cargo.toml
+
+	log info "Forcing (re-?)generation of lockfile…"
+	cargo generate-lockfile --quiet
+
+	# log info "Certifying crates…"
+	# for crate in $crates {
+	# 	log info $"  certifying `($crate)`"
+	# 	let crate_ver = open Cargo.lock | from toml | get package | where name == $crate | first | get version
+	# 	mach cargo vet -- certify $crate $crate_ver --accept-all --criteria safe-to-deploy
+	# }
+	mach vendor rust --ignore-modified
+}
