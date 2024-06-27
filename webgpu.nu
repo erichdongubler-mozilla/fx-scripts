@@ -1,28 +1,28 @@
 use std log [debug, info]
 
-export def "webgpu ci dl-reports" [
+export def "ci dl-reports" [
 	--in-dir: string = "../wpt/",
 	...revisions: string,
 ] {
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions
 }
 
-export def "webgpu ci dl-logs" [
+export def "ci dl-logs" [
 	--in-dir: string = "../wpt/",
 	...revisions: string,
 ] {
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/logs/live_backing.log' --out-dir $in_dir ...$revisions
 }
 
-def "webgpu ci wptreport-glob" [in_dir: path] {
+def "ci wptreport-glob" [in_dir: path] {
 	[$in_dir "**/wptreport.json"] |
 		path join |
 		str replace --all '\' '/' | into glob
 }
 
-export def "webgpu ci update-expected" [
+export def "ci update-expected" [
 	--remove-old,
-	--preset: string@"webgpu ci process-reports preset",
+	--preset: string@"ci process-reports preset",
 	--in-dir: string = "../wpt/",
 	...revisions: string,
 ] {
@@ -44,10 +44,10 @@ export def "webgpu ci update-expected" [
 	}
 
 	info "Downloading reports…"
-	webgpu ci dl-reports --in-dir $in_dir ...$revisions
+	ci dl-reports --in-dir $in_dir ...$revisions
 
 	debug "Deleting empty reports…"
-	let wptreport_file_glob = webgpu ci wptreport-glob $in_dir
+	let wptreport_file_glob = ci wptreport-glob $in_dir
 	let empty_deleted = ls $wptreport_file_glob
 		| filter {|entry| $entry.size == 0B }
 		| each {|entry|
@@ -62,7 +62,7 @@ export def "webgpu ci update-expected" [
 	info "Done!"
 }
 
-def "webgpu ci process-reports preset" [] {
+def "ci process-reports preset" [] {
 	[
 		"new-fx"
 		"same-fx"
@@ -72,11 +72,11 @@ def "webgpu ci process-reports preset" [] {
 	]
 }
 
-export def "webgpu ci search wpt by-test-message" [
+export def "ci search wpt by-test-message" [
 	term: string,
 	--in-dir: string = "../wpt/",
 ] {
-	let files = (ls (webgpu ci wptreport-glob $in_dir) | where type == file) | get name | sort
+	let files = (ls (ci wptreport-glob $in_dir) | where type == file) | get name | sort
 	let predicate = { $in | default "" | str contains $term }
 
 	$files
@@ -92,14 +92,14 @@ export def "webgpu ci search wpt by-test-message" [
 					{ file: $file test: $in }
 				}
 		}
-		| webgpu ci search wpt clean-search-results $in_dir
+		| ci search wpt clean-search-results $in_dir
 }
 
-export def "webgpu ci search wpt by-test-name" [
+export def "ci search wpt by-test-name" [
 	term: string,
 	--in-dir: string = "../wpt/",
 ] {
-	let files = (ls (webgpu ci wptreport-glob $in_dir) | where type == file) | get name | sort
+	let files = (ls (ci wptreport-glob $in_dir) | where type == file) | get name | sort
 
 	$files
 		| par-each --keep-order {|file|
@@ -110,10 +110,10 @@ export def "webgpu ci search wpt by-test-name" [
 					{ file: $file test: $in }
 				}
 		}
-		| webgpu ci search wpt clean-search-results $in_dir
+		| ci search wpt clean-search-results $in_dir
 }
 
-def "webgpu ci search wpt clean-search-results" [in_dir: string] {
+def "ci search wpt clean-search-results" [in_dir: string] {
 	flatten
 	| update file {
 		$in
