@@ -108,7 +108,7 @@ export def "ci search wpt by-test-message" [
 	$files
 		| par-each --keep-order {|file|
 			use std
-			log info $"searching ($file)"
+			log debug $"searching ($file)"
 			open $file
 				| get results
 				| where {
