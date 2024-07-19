@@ -185,3 +185,57 @@ def "ci search wpt clean-search-results" [in_dir: string] {
 				| move status --before subtests
 		}
 }
+
+# Forwards `args` to `moz-webgpu-cts aggregate-timings-from-logs`, and transforms them into an
+# aggregate object that can be browsed in Nushell.
+export def "ci timings extract-from-log-files" [
+	...args: string,
+]: nothing -> table<> {
+	moz-webgpu-cts aggregate-timings-from-logs ...$args
+		| from json
+		| transpose
+		| rename path tests
+		| update tests {
+			transpose
+				| rename test_path duration_secs
+				| update duration_secs { into duration --unit sec }
+				| rename --column { duration_secs: duration }
+				| update test_path { ci shorten-runner-url-path }
+		}
+}
+
+def "ci shorten-runner-url-path" [] {
+	str replace --regex '^_mozilla/webgpu/cts/webgpu/.*\?(.*)' '?$1'
+}
+
+# You can generate input for this script by using `webgpu ci timings extract-from-log-files`.
+export def "ci timings triage-long-tests" [
+]: table<path: path tests: table<test_path: string duration: duration>> -> any {
+	each {|entry|
+		$entry | update tests {
+			filter {|test|
+				let threshold_of_concern = match [("backlog" in $entry.path) ("long" in $entry.path)] {
+					[false false] => 2min
+					[true false] => 3min
+					[_ true] => 8min
+				}
+
+				("backlog" in $entry.path) and $test.duration > $threshold_of_concern
+			}
+		}
+	}
+	| filter {|entry| not ($entry | get tests | is-empty) }
+	| flatten
+	| group-by tests.test_path --to-table
+	| rename test_path
+	| update items { reject tests.test_path | flatten }
+	| sort-by test_path
+	| each { 
+		[
+			$in.test_path
+			...($in.items | each { $"\t($in.path): ($in.duration)" })
+		]
+	}
+	| flatten
+	| str join "\n"
+}
