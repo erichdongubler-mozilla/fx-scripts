@@ -92,7 +92,11 @@ export def "ci search wpt by-test-name" [
 
 	$files
 		| par-each --keep-order {|file|
-			open $file
+			let json = open $file
+			if $json == null {
+				return []
+			}
+			$json
 				| get results
 				| where { $in.test | str contains $term }
 				| each {
