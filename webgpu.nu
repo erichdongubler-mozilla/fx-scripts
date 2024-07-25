@@ -46,19 +46,8 @@ export def "ci update-expected" [
 	info "Downloading reports…"
 	ci dl-reports --in-dir $in_dir ...$revisions
 
-	debug "Deleting empty reports…"
-	let wptreport_file_glob = ci wptreport-glob $in_dir
-	let empty_deleted = ls $wptreport_file_glob
-		| filter {|entry| $entry.size == 0B }
-		| each {|entry|
-			rm $entry.name; $entry.name
-		}
-	for $entry in $empty_deleted {
-		debug (["  " ($entry)] | str join)
-	}
-
 	info "Processing reports…"
-	moz-webgpu-cts update-expected --glob ($wptreport_file_glob | into string) --preset $preset
+	moz-webgpu-cts update-expected --glob (ci wptreport-glob $in_dir | into string) --preset $preset
 	info "Done!"
 }
 
