@@ -24,6 +24,7 @@ export def "ci update-expected" [
 	--remove-old,
 	--preset: string@"ci process-reports preset",
 	--in-dir: string = "../wpt/",
+    --implementation-status: string@"ci process-reports implementation-status",
 	...revisions: string,
 ] {
 	if (which ruplacer | is-empty) {
@@ -65,6 +66,14 @@ def "ci process-reports preset" [] {
 		"merge"
 		"reset-contradictory"
 		"reset-all"
+	]
+}
+
+def "ci process-reports implementation-status" [] {
+	[
+		"implementing"
+		"backlog"
+		"not-implementing"
 	]
 }
 
