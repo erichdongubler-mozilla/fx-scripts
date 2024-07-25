@@ -46,8 +46,15 @@ export def "ci update-expected" [
 	info "Downloading reports…"
 	ci dl-reports --in-dir $in_dir ...$revisions
 
+	let revision_glob_opts = $revisions | reduce --fold [] {|rev, acc|
+		$acc | append [
+			"--glob"
+			($rev | parse '{_repo}:{hash}' | first | (ci wptreport-glob $"($in_dir)/($in.hash)/") | into string)
+		]
+	}
+
 	info "Processing reports…"
-	moz-webgpu-cts update-expected --glob (ci wptreport-glob $in_dir | into string) --preset $preset
+	moz-webgpu-cts update-expected ...$revision_glob_opts --preset $preset
 	info "Done!"
 }
 
