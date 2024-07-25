@@ -136,3 +136,7 @@ export def aggregate-timings-from-logs [glob_pattern: glob] {
     | rename log_file
     | reject items.log_file
 }
+
+export def task-timeout-string [] {
+  "Task aborted - max run time exceeded"
+}
