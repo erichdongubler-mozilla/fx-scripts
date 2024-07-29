@@ -24,7 +24,7 @@ export def "ci update-expected" [
 	--remove-old,
 	--preset: string@"ci process-reports preset",
 	--in-dir: string = "../wpt/",
-    --implementation-status: string@"ci process-reports implementation-status",
+    --implementation-status: list<string@"ci process-reports implementation-status">,
 	...revisions: string,
 ] {
 	if (which ruplacer | is-empty) {
@@ -47,6 +47,10 @@ export def "ci update-expected" [
 	info "Downloading reports…"
 	ci dl-reports --in-dir $in_dir ...$revisions
 
+	let implementation_status_opts = $implementation_status | reduce --fold [] {|status, acc|
+		$acc | append ["--implementation-status" $status]
+	}
+
 	let revision_glob_opts = $revisions | reduce --fold [] {|rev, acc|
 		$acc | append [
 			"--glob"
@@ -55,7 +59,7 @@ export def "ci update-expected" [
 	}
 
 	info "Processing reports…"
-	moz-webgpu-cts update-expected ...$revision_glob_opts --preset $preset --implementation-status $implementation_status
+	moz-webgpu-cts update-expected ...$revision_glob_opts --preset $preset ...$implementation_status_opts
 	info "Done!"
 }
 
