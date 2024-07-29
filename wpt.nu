@@ -17,12 +17,24 @@ def determine-test-timings []: list<record> -> list<record> {
   let test_events = $in
   mut curr_test = null
   mut test_timings = {}
+  mut current_test = null
   mut last_stop_timestamp = null
   let first_timestamp = $test_events | first | get timestamp
   for evt in $test_events {
     match $evt.type {
       "START" => {
+        if $current_test != null {
+          error make {
+            msg: ([
+              $"did not finish ($current_test)"
+              $"before starting new test on line ($evt.line_num);"
+              "parsing problem?"
+            ] | str join " ")
+          }
+        }
+
         let key = $evt.rest
+        $current_test = $key
         if $key in $test_timings {
           error make {
             msg: ([
@@ -54,22 +66,51 @@ def determine-test-timings []: list<record> -> list<record> {
       | "UNEXPECTED-FAIL"
       | "UNEXPECTED-TIMEOUT"
       | "UNEXPECTED-NOTRUN"
+      | "UNEXPECTED-CRASH"
       | "KNOWN-INTERMITTENT-FAIL"
       | "KNOWN-INTERMITTENT-TIMEOUT"
       | "KNOWN-INTERMITTENT-NOTRUN"
       | "KNOWN-INTERMITTENT-ERROR"
+      | "KNOWN-INTERMITTENT-CRASH"
       => {
-        let parsed = $evt.rest | parse '{rest} | took {wpt_duration}' | first
-        let key = $parsed.rest
-        $last_stop_timestamp = $evt.timestamp
-        $test_timings = ($test_timings | update $key {
-          insert end $evt.timestamp
-            | insert log_duration { $in.end - $in.begin }
-            | move log_duration --before begin
-            | insert status { $evt.type }
-            | move status --before begin
-            # | insert wpt_duration { $parsed.wpt_duration | into duration }
-        })
+        if $evt.rest =~ '^leakcheck' {
+          continue
+        }
+
+        try {
+          let parsed = $evt.rest | parse '{rest} | took {wpt_duration}' | first
+          let key = $parsed.rest
+          $last_stop_timestamp = $evt.timestamp
+          $test_timings = ($test_timings | update $key {
+            insert end $evt.timestamp
+              | insert log_duration { $in.end - $in.begin }
+              | move log_duration --before begin
+              | insert outcome { $evt.type }
+              | move outcome --before begin
+              # | insert wpt_duration { $parsed.wpt_duration | into duration }
+          })
+          $current_test = null
+          continue
+        }
+
+        try {
+          let parsed = $evt.rest | parse --regex '^(?P<test>.*?) | (?P<subtest>.*?)(:? - (?P<_err_msg>))$' | reject _err_msg | first
+          let key = $parsed.test
+          $test_timings = ($test_timings | update $key {
+            upsert subtests {
+              default [] | append { name: $parsed.subtest outcome: $evt.type }
+            }
+          })
+          continue
+        }
+
+        error make {
+          msg: $"failed to parse end outcome from `($evt.type)` line ($evt.line_num)"
+          label: {
+            text: $evt.rest
+            span: (metadata $in).span
+          }
+        }
       }
       "INFO" => {}
       _ => {
@@ -96,7 +137,7 @@ def aggregate-timings-of-single-log []: list<record> -> list<record> {
       if ($in.test =~ '\?') {
         $in.test | parse '{path}?{_params}' | get path | first
       } else {
-        $in
+        $in.test
       }
     }
     | where status != SKIP
@@ -121,8 +162,10 @@ export def aggregate-timings []: binary -> list<record> {
   extract-test-events | determine-test-timings | aggregate-timings-of-single-log
 }
 
-export def aggregate-timings-from-logs [glob_pattern: glob] {
-  ls $glob_pattern
+export def aggregate-timings-from-logs [
+  ...glob_pattern: glob
+] {
+  ls ...$glob_pattern
     | where type == file
     | get name
     | par-each {
