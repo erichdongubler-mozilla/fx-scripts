@@ -20,12 +20,12 @@ def "ci wptreport-glob" [in_dir: path] {
 		str replace --all '\' '/' | into glob
 }
 
-export def "ci update-expected" [
+def "ci process-reports" [
+	verb: string,
 	--remove-old,
-	--preset: string@"ci process-reports preset",
 	--in-dir: string = "../wpt/",
-    --implementation-status: list<string@"ci process-reports implementation-status">,
-	...revisions: string,
+	--revisions: list<string>,
+	...additional_args
 ] {
 	let in_dir = do {
 		let path_sep_chars = [$'\(char path_sep)' '\/'] | uniq
@@ -41,10 +41,6 @@ export def "ci update-expected" [
 	info "Downloading reports…"
 	ci dl-reports --in-dir $in_dir ...$revisions
 
-	let implementation_status_opts = $implementation_status | reduce --fold [] {|status, acc|
-		$acc | append ["--implementation-status" $status]
-	}
-
 	let revision_glob_opts = $revisions | reduce --fold [] {|rev, acc|
 		$acc | append [
 			"--glob"
@@ -53,8 +49,21 @@ export def "ci update-expected" [
 	}
 
 	info "Processing reports…"
-	moz-webgpu-cts update-expected ...$revision_glob_opts --preset $preset ...$implementation_status_opts
+	moz-webgpu-cts $verb ...$revision_glob_opts ...$additional_args
 	info "Done!"
+}
+
+export def "ci update-expected" [
+	--remove-old,
+	--preset: string@"ci process-reports preset",
+	--in-dir: string = "../wpt/",
+	--implementation-status: list<string@"ci process-reports implementation-status">,
+	...revisions: string,
+] {
+	let implementation_status_opts = $implementation_status | reduce --fold [] {|status, acc|
+		$acc | append ["--implementation-status" $status]
+	}
+	ci process-reports update-expected --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions "--preset" $preset ...$implementation_status_opts 
 }
 
 def "ci process-reports preset" [] {
