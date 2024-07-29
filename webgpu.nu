@@ -66,6 +66,14 @@ export def "ci update-expected" [
 	ci process-reports update-expected --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions "--preset" $preset ...$implementation_status_opts 
 }
 
+export def "ci migrate" [
+	--remove-old,
+	--in-dir: directory = "../wpt/",
+	...revisions: string,
+] {
+	ci process-reports migrate --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions
+}
+
 def "ci process-reports preset" [] {
 	[
 		"new-fx"
