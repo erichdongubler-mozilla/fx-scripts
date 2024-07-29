@@ -27,12 +27,6 @@ export def "ci update-expected" [
     --implementation-status: list<string@"ci process-reports implementation-status">,
 	...revisions: string,
 ] {
-	if (which ruplacer | is-empty) {
-		error make --unspanned {
-			msg: "`ruplacer` binary not found in `$PATH`, bailing"
-		}
-	}
-
 	let in_dir = do {
 		let path_sep_chars = [$'\(char path_sep)' '\/'] | uniq
 		$in_dir | str replace --regex $"[($path_sep_chars)]$" ""
