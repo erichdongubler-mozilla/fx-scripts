@@ -1,14 +1,14 @@
 use std log [debug, info]
 
 export def "ci dl-reports" [
-	--in-dir: string = "../wpt/",
+	--in-dir: directory = "../wpt/",
 	...revisions: string,
 ] {
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions
 }
 
 export def "ci dl-logs" [
-	--in-dir: string = "../wpt/",
+	--in-dir: directory = "../wpt/",
 	...revisions: string,
 ] {
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/logs/live_backing.log' --out-dir $in_dir ...$revisions
@@ -23,7 +23,7 @@ def "ci wptreport-glob" [in_dir: path] {
 def "ci process-reports" [
 	verb: string,
 	--remove-old,
-	--in-dir: string = "../wpt/",
+	--in-dir: directory = "../wpt/",
 	--revisions: list<string>,
 	...additional_args
 ] {
@@ -56,7 +56,7 @@ def "ci process-reports" [
 export def "ci update-expected" [
 	--remove-old,
 	--preset: string@"ci process-reports preset",
-	--in-dir: string = "../wpt/",
+	--in-dir: directory = "../wpt/",
 	--implementation-status: list<string@"ci process-reports implementation-status">,
 	...revisions: string,
 ] {
@@ -94,7 +94,7 @@ def "ci process-reports implementation-status" [] {
 
 export def "ci search wpt by-test-message" [
 	term: string,
-	--in-dir: string = "../wpt/",
+	--in-dir: directory = "../wpt/",
 ] {
 	let files = (ls (ci wptreport-glob $in_dir) | where type == file) | get name | sort
 	let predicate = { $in | default "" | str contains $term }
@@ -117,7 +117,7 @@ export def "ci search wpt by-test-message" [
 
 export def "ci search wpt by-test-name" [
 	term: string,
-	--in-dir: string = "../wpt/",
+	--in-dir: directory = "../wpt/",
 ] {
 	let files = (ls (ci wptreport-glob $in_dir) | where type == file) | get name | sort
 
