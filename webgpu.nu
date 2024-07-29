@@ -55,7 +55,7 @@ export def "ci update-expected" [
 	}
 
 	info "Processing reports…"
-	moz-webgpu-cts update-expected ...$revision_glob_opts --preset $preset
+	moz-webgpu-cts update-expected ...$revision_glob_opts --preset $preset --implementation-status $implementation_status
 	info "Done!"
 }
 
