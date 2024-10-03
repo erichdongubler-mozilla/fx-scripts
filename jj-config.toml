@@ -1,7 +1,7 @@
 [revset-aliases]
 "trunk()" = "bookmarks/central@unified"
 "immutable_heads()" = '''
-trunk() | tags()
+builtin_immutable_heads()
 | remote_branches('bookmarks/aurora')
 | remote_branches('bookmarks/autoland')
 | remote_branches('bookmarks/beta')

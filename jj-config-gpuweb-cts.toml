@@ -1,2 +1,2 @@
 [revset-aliases]
-"immutable_heads()" = "trunk() | tags() | fx-ci@origin | gh-pages@upstream"
+"immutable_heads()" = "builtin_immutable_heads() | fx-ci@origin | gh-pages@upstream"
