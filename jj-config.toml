@@ -2,9 +2,9 @@
 "trunk()" = "bookmarks/central@unified"
 "immutable_heads()" = '''
 builtin_immutable_heads()
-| remote_branches('bookmarks/aurora')
-| remote_branches('bookmarks/autoland')
-| remote_branches('bookmarks/beta')
-| remote_branches('bookmarks/esr')
-| remote_branches('bookmarks/release')
+| remote_bookmarks('bookmarks/aurora')
+| remote_bookmarks('bookmarks/autoland')
+| remote_bookmarks('bookmarks/beta')
+| remote_bookmarks('bookmarks/esr')
+| remote_bookmarks('bookmarks/release')
 '''
