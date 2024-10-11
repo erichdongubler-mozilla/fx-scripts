@@ -1,4 +1,4 @@
-use std log [debug, info]
+use std log
 
 def quote-args-for-debugging []: list<string> -> string {
 	$in | each { ['"' $in '"'] | str join } | str join ' '
@@ -9,7 +9,7 @@ export def "ci dl-reports" [
 	...revisions: string,
 ] {
 	let args = [--job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions]
-	info $"Downloading reports via `treeherder-dl ($args | quote-args-for-debugging)…"
+	log info $"Downloading reports via `treeherder-dl ($args | quote-args-for-debugging)…"
 	treeherder-dl ...$args
 }
 
@@ -54,9 +54,9 @@ def "ci process-reports" [
 	}
 
 	let args = [$verb ...$revision_glob_opts ...$additional_args]
-	info $"Processing reports with `moz-webgpu-cts ($args | quote-args-for-debugging)`…"
+	log info $"Processing reports with `moz-webgpu-cts ($args | quote-args-for-debugging)`…"
 	moz-webgpu-cts ...$args
-	info "Done!"
+	log info "Done!"
 }
 
 export def "ci update-expected" [
