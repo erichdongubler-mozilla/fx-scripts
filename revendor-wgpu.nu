@@ -18,7 +18,7 @@ export def wgpu_repo_pkgs [] {
 export def main [
 	--revision: string,
 ] {
-	use std log [error, info]
+	use std/log [error, info]
 
 	let old_metadata = (wgpu_repo_pkgs)
 

@@ -1,4 +1,4 @@
-use std log
+use std/log
 
 def quote-args-for-debugging []: list<string> -> string {
 	$in | each { ['"' $in '"'] | str join } | str join ' '
