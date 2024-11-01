@@ -44,6 +44,12 @@ export def "bug get" [
   }
 }
 
+export def "bug to-cli" [
+  bug: any # TODO: actual structure we depend on
+] {
+  use std/log [] # set up `log` cmd. state
+}
+
 export def "bugs apply-output-fmt" [
   fmt: string@"nu-complete bugs output-fmt"
 ]: table<id: any type: any summary: any product: any assigned_to_detail: record<email: string> status: any resolution: any last_change_time: any> -> any {
