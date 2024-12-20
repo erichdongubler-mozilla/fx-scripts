@@ -164,7 +164,7 @@ def "ci search wpt clean-search-results" [in_dir: string] {
 	| each {|entry|
 		$entry | try {
 			$entry | update test {
-				$'https://example.com($in)' | url parse | get params | get q
+				$'https://example.com($in)' | url parse | get params | where key == q | first | get value
 			}
 		} catch {
 			$entry
