@@ -97,3 +97,42 @@ export def main [
 
 	mach vendor rust "--ignore-modified"
 }
+
+export def "with-local" [
+  wgpu_ckt_dir: directory,
+  --crates: list<string> | null = null,
+] {
+  let wgpu_ckt_dir = $wgpu_ckt_dir | str replace --all '\' '/' | str replace --regex '/$' ''
+
+  mut resolved_crates = $crates
+  let cargo_manifest_path = cargo locate-project | from json | get root
+  if $resolved_crates == null {
+    $resolved_crates = cargo metadata | extract_wgpu_repo_pkgs | get name
+    if ($resolved_crates | is-empty) {
+      error make --unspanned {
+        msg: $"no crates associated with `($WGPU_REPO_URL)` were found with `cargo metadata`; are you already using local `path` dependencies?"
+      }
+    }
+  } else if ($resolved_crates | is-empty) {
+    error make --unspanned {
+      msg: "no `--crates` specified; did you make a scripting mistake?"
+      label: {
+        text: "this was an empty list"
+        span: (metadata $crates).span
+      }
+    }
+  }
+
+  let patches_section = [
+    $'[patch."($WGPU_REPO_URL)"]'
+    ...(
+      $resolved_crates
+        | each {
+          $'"($in)" = { path = "($wgpu_ckt_dir)/($in)" }'
+        }
+    )
+  ] | str join "\n"
+
+  $"\n($patches_section)" | save --append $cargo_manifest_path
+  cargo fetch --manifest-path $cargo_manifest_path
+}
