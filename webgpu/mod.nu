@@ -1,3 +1,5 @@
+export module revendor-wgpu.nu
+
 use std/log
 
 def quote-args-for-debugging []: list<string> -> string {
