@@ -11,13 +11,14 @@ def "cargo metadata" [] {
 	^cargo metadata --format-version 1 | from json
 }
 
+const WGPU_REPO_URL = "https://github.com/gfx-rs/wgpu"
+
 export def extract_wgpu_repo_pkgs [] {
-	let wgpu_repo_url = "https://github.com/gfx-rs/wgpu"
-	let id_pat = ["git+" $wgpu_repo_url "?rev={rev}#{name}@{ver}"] | str join
+	let id_pat = ["git+" $WGPU_REPO_URL "?rev={rev}#{name}@{ver}"] | str join
 	$in
 		| get packages
 		| where source != null
-		| where {|pkg| $pkg.source =~ $wgpu_repo_url }
+		| where {|pkg| $pkg.source =~ $WGPU_REPO_URL }
 		| each {|pkg|
 			let parsed_id = $pkg.id | parse $id_pat | first
 			{
