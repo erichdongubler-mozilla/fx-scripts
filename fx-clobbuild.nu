@@ -35,4 +35,11 @@ def "_pueue report-status" [task_id: string] {
 
 	notify $"($status)\nFinished build in `($working_dir)`"
 }
+
+export def "bootstrap lines-to-disable" [] {
+	[
+		"# ac_add_options --disable-bootstrap"
+		"# ac_add_options MOZ_WINDOWS_RS_DIR=…"
+		"# ac_add_options --without-wasm-sandboxed-libraries"
+	]
 }
