@@ -157,19 +157,24 @@ export def "ci search wpt by-test-name" [
 
 def "ci search wpt clean-search-results" [in_dir: string] {
 	flatten
-	| update file {
-		$in
-			| str replace ($in_dir | path expand) ''
-			| str replace ([public test_info wptreport.json] | path join) ''
-	}
-	| flatten
-	| each {|entry|
-		$entry | try {
-			$entry | update test {
-				$'https://example.com($in)' | url parse | get params | where key == q | first | get value
-			}
-		} catch {
-			$entry
+		| update file {
+			$in
+				| str replace ($in_dir | path expand) ''
+				| str replace ([public test_info wptreport.json] | path join) ''
 		}
-	}
+		| flatten
+		| each {|entry|
+			let params = $'https://example.com($entry.test)'
+				| url parse
+				| get params
+				| transpose --header-row
+				| first
+
+			let test = $params | get q
+
+			$entry
+				| update test { $test }
+				| update duration { into duration --unit ms }
+				| move status --before subtests
+		}
 }
