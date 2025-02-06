@@ -171,9 +171,16 @@ def "ci search wpt clean-search-results" [in_dir: string] {
 				| first
 
 			let test = $params | get q
+			let worker_type = try {
+				$params | get worker
+			} catch {
+				null
+			}
 
 			$entry
 				| update test { $test }
+				| insert worker_type { $worker_type }
+				| move worker_type --after subsuite
 				| update duration { into duration --unit ms }
 				| move status --before subtests
 		}
