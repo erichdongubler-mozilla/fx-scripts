@@ -147,7 +147,7 @@ export def "ci search wpt by-test-name" [
 			}
 			$json
 				| get results
-				| where { $in.test | str contains $term }
+				| where test =~ $term
 				| each {
 					{ file: $file test: $in }
 				}
