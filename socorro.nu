@@ -16,6 +16,19 @@ export def "api super-search" [
   _http get "SuperSearch/" $arguments
 }
 
+export def reports-from-bug [
+  bug_id: int,
+] {
+  let signatures = api signatures-by-bugs $bug_id | get hits.signature
+
+  let reports = api super-search {
+    signature: ($signatures | each { $'=($in)' }) # `=` is a string search operator for "exact match"
+    product: Firefox
+  } | get hits.uuid
+
+  $reports | par-each { api processed-crash $in }
+}
+
 export def "_http get" [
   url_path: string,
   query_params: record,
