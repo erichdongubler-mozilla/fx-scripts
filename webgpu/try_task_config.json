@@ -29,16 +29,16 @@
                 "test-macosx1470-64/opt-web-platform-tests-webgpu-backlog-*",
                 "test-macosx1470-64/opt-web-platform-tests-webgpu-backlog-long-*",
                 "test-macosx1470-64/opt-web-platform-tests-webgpu-long-*",
-                "test-windows11-64-2009-qr/debug-mochitest-webgpu",
-                "test-windows11-64-2009-qr/debug-web-platform-tests-webgpu-*",
-                "test-windows11-64-2009-qr/debug-web-platform-tests-webgpu-backlog-*",
-                "test-windows11-64-2009-qr/debug-web-platform-tests-webgpu-backlog-long-*",
-                "test-windows11-64-2009-qr/debug-web-platform-tests-webgpu-long-*",
-                "test-windows11-64-2009-qr/opt-mochitest-webgpu",
-                "test-windows11-64-2009-qr/opt-web-platform-tests-webgpu-*",
-                "test-windows11-64-2009-qr/opt-web-platform-tests-webgpu-backlog-*",
-                "test-windows11-64-2009-qr/opt-web-platform-tests-webgpu-backlog-long-*",
-                "test-windows11-64-2009-qr/opt-web-platform-tests-webgpu-long-*"
+                "test-windows11-64-24h2/debug-mochitest-webgpu",
+                "test-windows11-64-24h2/debug-web-platform-tests-webgpu-*",
+                "test-windows11-64-24h2/debug-web-platform-tests-webgpu-backlog-*",
+                "test-windows11-64-24h2/debug-web-platform-tests-webgpu-backlog-long-*",
+                "test-windows11-64-24h2/debug-web-platform-tests-webgpu-long-*",
+                "test-windows11-64-24h2/opt-mochitest-webgpu",
+                "test-windows11-64-24h2/opt-web-platform-tests-webgpu-*",
+                "test-windows11-64-24h2/opt-web-platform-tests-webgpu-backlog-*",
+                "test-windows11-64-24h2/opt-web-platform-tests-webgpu-backlog-long-*",
+                "test-windows11-64-24h2/opt-web-platform-tests-webgpu-long-*"
             ]
         }
     },
