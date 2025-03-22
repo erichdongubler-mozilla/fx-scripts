@@ -51,6 +51,21 @@ def "rest-api get-json" [
   $response
 }
 
+def "rest-api post-json" [
+  url_path: string,
+  input: any,
+  what: string = "`POST` request"
+] {
+  use std/log [] # set up `log` cmd. state
+
+  let full_url = $"($HOST)/rest/($url_path)"
+  log debug $"`POSTING`ting ($full_url | to nuon)"
+
+  let headers = auth-headers from-api-key --required-for $what
+
+  http post --headers $headers --content-type "application/json" $full_url $input
+}
+
 export def "bug get" [
   id_or_alias: any
   --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
