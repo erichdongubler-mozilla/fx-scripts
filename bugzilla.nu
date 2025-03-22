@@ -5,6 +5,8 @@ const HOST = "https://bugzilla.mozilla.org"
 def "rest-api get-json" [
   url_path: string,
 ]: nothing -> any {
+  use std/log [] # set up `log` cmd. state
+
   let full_url = $"($HOST)/rest/($url_path)"
   log debug $"`GET`ting ($full_url | to nuon)"
   let response = http get $full_url --headers {
