@@ -67,7 +67,7 @@ def "ci process-reports" [
 
 export def "ci update-expected" [
 	--remove-old,
-	--preset: string@"ci process-reports preset" | null = null,
+	--preset: string@"ci process-reports preset",
 	--in-dir: directory = "../wpt/",
 	--implementation-status: list<string@"ci process-reports implementation-status"> = [],
 	...revisions: string,

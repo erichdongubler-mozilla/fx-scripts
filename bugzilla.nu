@@ -2,8 +2,30 @@ use std/log
 
 const HOST = "https://bugzilla.mozilla.org"
 
+def "auth-headers from-api-key" [
+  --required-for: string | null = null,
+] {
+  try {
+    {
+      'X-BUGZILLA-API-KEY': $env.BUGZILLA_API_KEY
+    }
+  } catch {
+    if $required_for == null {
+      {}
+    } else {
+      error make --unspanned {
+        msg: ([
+          "failed to get Bugzilla API key via `BUGZILLA_API_KEY` environment variable, "
+          $"and it's required for ($required_for)"
+        ] | str join)
+      }
+    }
+  }
+}
+
 def "rest-api get-json" [
   url_path: string,
+  --auth-required-for: string | null = null,
 ]: nothing -> any {
   use std/log [] # set up `log` cmd. state
 
@@ -14,6 +36,7 @@ def "rest-api get-json" [
     "Content-Type": "application/json"
     "Accept": "application/json"
   }
+  $headers = $headers | merge (auth-headers from-api-key --required-for $auth_required_for)
 
   let response = http get $full_url --headers $headers
   if ("error" in $response and $response.error) {
