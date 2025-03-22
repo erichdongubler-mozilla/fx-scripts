@@ -166,3 +166,7 @@ export def "search" [
     | bugs parse-response
     | bugs apply-output-fmt $output_fmt
 }
+
+export def "whoami" []: nothing -> record<id: int real_name: string nick: string name: string> {
+  rest-api get-json "whoami" --auth-required-for "`whoami` queries"
+}
