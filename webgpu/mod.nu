@@ -2,6 +2,182 @@ export module revendor-wgpu.nu
 
 use std/log
 
+export def "begin-revendor cts" [
+	--revision: string | null = null,
+	--assigned-to: string | null = null,
+] {
+	use std/log [] # set up `log` cmd. state
+
+	const BUGZILLA = path self "../bugzilla.nu"
+	use $BUGZILLA
+
+	mut revision = $revision
+	if $revision == null {
+		$revision = gh current-mainline-commit gpuweb cts
+	}
+
+	mut $assigned_to = $assigned_to
+		if $assigned_to == null {
+		$assigned_to = bugzilla whoami | get name
+	}
+
+	let bug_id = bug create {
+		summary: $"Update WebGPU CTS to upstream \(week of (monday-of-this-week)\)"
+		assigned_to: $assigned_to
+		blocks: 1863146 # `webgpu-update-cts`
+		priority: P1
+	} | get id
+
+	let moz_yaml_path = 'dom/webgpu/tests/cts/moz.yaml'
+	try {
+		mach vendor $moz_yaml_path --revision $revision
+	} catch {
+		log error $"failed to revendor from `($moz_yaml_path)`"
+	}
+
+
+	$"Bug ($bug_id) - test\(webgpu\): update CTS to ($revision) r=#webgpu-reviewers"
+}
+
+export def "begin-revendor wgpu" [
+	--revision: string | null = null,
+	--assigned-to: string | null = null,
+] {
+	use std/log [] # set up `log` cmd. state
+
+	mut mach_cmd = null
+	try {
+		$mach_cmd = which ./mach | first | get command
+	} catch {
+		error make --unspanned {
+			msg: "failed to find `./mach` script in the CWD."
+		}
+	}
+
+	try {
+		which cargo-vet | first
+	} catch {
+		error make --unspanned {
+			msg: "failed to find `cargo vet` binary in `PATH`"
+		}
+	}
+
+	let moz_yaml_path = 'gfx/wgpu_bindings/moz.yaml'
+	let moz_yaml = open $moz_yaml_path
+
+	if not (
+		$moz_yaml.vendoring.flavor == 'rust' and
+		$moz_yaml.vendoring.url == 'https://github.com/gfx-rs/wgpu' and
+		true
+	) {
+		error make --unspanned {
+			msg: $"unfamiliar `vendoring.{flavor,url}` at `($moz_yaml_path)`"
+		}
+	}
+
+	let old_revision = $moz_yaml.origin.revision
+
+	let new_revision = ^$mach_cmd vendor --check-for-update $moz_yaml_path
+	if $env.LAST_EXIT_CODE != 0 {
+		error make --unspanned {
+			msg: $"internal error: failed to run `mach vendor --check-for-update ($moz_yaml_path)`"
+		}
+	}
+	let new_revision = $new_revision | parse '{revision} {date}' | get revision
+	let new_revision = match ($new_revision | length) {
+		0 => {
+			error make --unspanned {
+				msg: "no new commits detected upstream"
+			}
+		}
+		1 => {
+			$new_revision | first
+		}
+		2 => {
+			error make --unspanned {
+				msg: "internal error: got more than one "
+			}
+		}
+	}
+
+	let wgpu_crates_to_audit = cargo metadata --format-version 1
+		| from json
+		| get packages
+		| where {
+			$in.source != null and $in.source == $'git+($moz_yaml.vendoring.url)?rev=($old_revision)#($old_revision)'
+		}
+		| select name version
+
+	const BUGZILLA = path self "../bugzilla.nu"
+	use $BUGZILLA
+
+	mut $assigned_to = $assigned_to
+	if $assigned_to == null {
+		$assigned_to = bugzilla whoami | get name
+	}
+
+	let bug_id_webgpu_update_wgpu = 1851881
+
+	let update_dependents = try {
+		bugzilla bug get --output-fmt full $bug_id_webgpu_update_wgpu | get blocks
+	} catch {
+		log error $"failed to fetch bugs depending on ($bug_id_webgpu_update_wgpu), bailing"
+	}
+
+	let bug_id = bug create {
+		summary: $"Update WGPU to upstream \(week of (monday-of-this-week)\)"
+		assigned_to: $assigned_to
+		blocks: $bug_id_webgpu_update_wgpu
+		priority: P1
+	} | get id
+
+	try {
+		^$mach_cmd vendor $moz_yaml_path --revision $new_revision
+	} catch {
+		log error $"failed to revendor from `($moz_yaml_path)`"
+	}
+
+	for crate in $wgpu_crates_to_audit {
+		# TODO: What if the new version is not the same?
+		cargo vet certify $crate.name --criteria safe-to-deploy --accept-all $'($crate.version)@git:($old_revision)' $'($crate.version)@git:($new_revision)'
+	}
+
+	print "You are now ready to run `mach vendor rust`!"
+
+	$"Bug ($bug_id) - build\(webgpu\): update WGPU to ($new_revision) r=#webgpu-reviewers!"
+}
+
+export def "mach vendor" [
+	arg: string,
+	--revision: string,
+] {
+	mut mach_cmd = null
+	try {
+		which ./mach | first | get command
+	} catch {
+		error make --unspanned {
+			msg: "failed to find `mach` script in the CWD"
+		}
+	}
+
+	run-external ./mach vendor $arg
+}
+
+def "gh current-mainline-commit" [
+	org: string,
+	repo: string,
+] {
+	http get $'https://api.github.com/repos/($org)/($repo)/commits?({ per_page: 1 } | url build-query)' | get sha | first
+}
+
+def monday-of-this-week [] {
+	seq date --reverse --days 7
+		| into datetime
+		| where { ($in | format date "%u") == "1" }
+		| first
+		| format date "%Y-%m-%d"
+}
+
 export def "bug create" [input: record<summary: string>] {
 	const BUGZILLA = path self "../bugzilla.nu"
 	use $BUGZILLA
