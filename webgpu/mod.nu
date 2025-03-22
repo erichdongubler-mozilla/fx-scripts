@@ -28,6 +28,8 @@ export def "begin-wgpu-revendor" [
   $"Bug ($bug_id) - build\(webgpu\): update WGPU to $commit_sha r=#webgpu-reviewers"
 }
 
+alias moz-webgpu-cts = ~/workspace/mozilla/tools/moz-webgpu-cts/target/release/moz-webgpu-cts
+
 def quote-args-for-debugging []: list<string> -> string {
 	each { $'"($in)"' } | str join ' '
 }
