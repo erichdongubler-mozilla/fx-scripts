@@ -2,6 +2,32 @@ export module revendor-wgpu.nu
 
 use std/log
 
+export def "begin-wgpu-revendor" [
+  --revision: string | null = null
+  --assigned-to: string
+] {
+  mut revision = $revision
+  if $revision == null {
+    $revision = http get $'https://api.github.com/repos/gfx-rs/wgpu/commits?({ per_page: 1 } | url build-query)' | get sha
+  }
+
+  use (path self "../bugzilla.nu")
+  let bug_id = bugzilla bug create {
+    product: 'Core'
+    component: 'Graphics: WebGPU'
+    type: 'task'
+    version: 'unspecified'
+    summary: 'Update WGPU to upstream (week of )'
+    assigned_to: $assigned_to
+  } | get id
+
+  try {
+    ./mach vendor 'gfx/wgpu_bindings/moz.yaml' --revision $revision
+  }
+
+  $"Bug ($bug_id) - build\(webgpu\): update WGPU to $commit_sha r=#webgpu-reviewers"
+}
+
 def quote-args-for-debugging []: list<string> -> string {
 	each { $'"($in)"' } | str join ' '
 }
