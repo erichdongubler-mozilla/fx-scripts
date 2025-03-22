@@ -3,7 +3,7 @@ export module revendor-wgpu.nu
 use std/log
 
 def quote-args-for-debugging []: list<string> -> string {
-	$in | each { ['"' $in '"'] | str join } | str join ' '
+	each { $'"($in)"' } | str join ' '
 }
 
 export def "ci dl-reports" [
@@ -27,9 +27,9 @@ export def "ci dl-logs" [
 }
 
 def "ci wptreport-glob" [in_dir: path] {
-	[$in_dir "**/wptreport.json"] |
-		path join |
-		str replace --all '\' '/' | into glob
+	$in_dir
+		| path join "**/wptreport.json"
+		| str replace --all '\' '/' | into glob
 }
 
 def "ci process-reports" [
@@ -67,9 +67,9 @@ def "ci process-reports" [
 
 export def "ci update-expected" [
 	--remove-old,
-	--preset: string@"ci process-reports preset",
+	--preset: string@"ci process-reports preset" = "reset-contradictory",
 	--in-dir: directory = "../wpt/",
-	--implementation-status: list<string@"ci process-reports implementation-status">,
+	--implementation-status: list<string@"ci process-reports implementation-status"> = [],
 	...revisions: string,
 ] {
 	use std/log [] # set up `log` cmd. state
