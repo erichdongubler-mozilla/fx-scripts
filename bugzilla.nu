@@ -22,6 +22,12 @@ def "rest-api get-json" [
   $response
 }
 
+export def "bug create" [
+  input: record<product: string component: string type: string version: string>,
+] {
+  http post --headers ["X-BUGZILLA-API-KEY" $env.BUGZILLA_API_KEY] --content-type "application/json" $'($HOST)/rest/bug' $input
+}
+
 export def "bug get" [
   id_or_alias: any
   --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
