@@ -66,6 +66,12 @@ def "rest-api post-json" [
   http post --headers $headers --content-type "application/json" $full_url $input
 }
 
+export def "bug create" [
+  input: record<product: string component: string type: string version: string>,
+] {
+  rest-api post-json "bug" $input "bug creation"
+}
+
 export def "bug get" [
   id_or_alias: any
   --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
