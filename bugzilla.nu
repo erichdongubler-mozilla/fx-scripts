@@ -9,9 +9,13 @@ def "rest-api get-json" [
 
   let full_url = $"($HOST)/rest/($url_path)"
   log debug $"`GET`ting ($full_url | to nuon)"
-  let response = http get $full_url --headers {
-    "Content-Type": "application/json" "Accept": "application/json"
+
+  mut headers = {
+    "Content-Type": "application/json"
+    "Accept": "application/json"
   }
+
+  let response = http get $full_url --headers $headers
   if ("error" in $response and $response.error) {
     error make {
       msg: $"error returned ($response.code): ($response.message)"
