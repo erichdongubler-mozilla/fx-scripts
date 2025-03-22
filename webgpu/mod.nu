@@ -2,6 +2,129 @@ export module revendor-wgpu.nu
 
 use std/log
 
+export def "begin-revendor cts" [
+	--revision: string | null = null,
+	--assigned-to: string | null = null,
+] {
+	use std/log [] # set up `log` cmd. state
+
+	const BUGZILLA = path self "../bugzilla.nu"
+	use $BUGZILLA
+
+	mut revision = $revision
+	if $revision == null {
+		$revision = gh current-mainline-commit gpuweb cts
+	}
+
+	mut $assigned_to = $assigned_to
+		if $assigned_to == null {
+		$assigned_to = bugzilla whoami | get name
+	}
+
+	let bug_id = bug create {
+		type: 'task'
+		summary: $"Update WebGPU CTS to upstream \(week of (monday-of-this-week)\)"
+		assigned_to: $assigned_to
+		blocks: 1863146 # `webgpu-update-cts`
+		priority: P1
+	} | get id
+
+	let moz_yaml_path = 'dom/webgpu/tests/cts/moz.yaml'
+	try {
+	mach vendor $moz_yaml_path --revision $revision
+	} catch {
+	log error $"failed to revendor from `($moz_yaml_path)`"
+	}
+
+
+	$"Bug ($bug_id) - test\(webgpu\): update CTS to ($revision) r=#webgpu-reviewers"
+}
+
+export def "begin-revendor wgpu" [
+	--revision: string | null = null,
+	--assigned-to: string | null = null,
+] {
+	use std/log [] # set up `log` cmd. state
+
+	const BUGZILLA = path self "../bugzilla.nu"
+	use $BUGZILLA
+
+	mut revision = $revision
+	if $revision == null {
+		$revision = gh current-mainline-commit gfx-rs wgpu
+	}
+
+	mut $assigned_to = $assigned_to
+	if $assigned_to == null {
+		$assigned_to = bugzilla whoami | get name
+	}
+
+	let bug_id_webgpu_update_wgpu = 1851881
+
+	let update_dependents = try {
+		bugzilla bug get $bug_id_webgpu_update_wgpu | get blocks
+	} catch {
+		log error $"failed to fetch bugs depending on ($bug_id_webgpu_update_wgpu), bailing"
+	}
+
+	let bug_id = bug create {
+		type: 'task'
+		summary: $"Update WGPU to upstream \(week of (monday-of-this-week)\)"
+		assigned_to: $assigned_to
+		blocks: $bug_id_webgpu_update_wgpu
+		priority: P1
+	} | get id
+
+	mut mach_cmd = null
+	try {
+		which ./mach | first | get command
+	} catch {
+		error make --unspanned {
+			msg: "failed to find `mach` script in the CWD."
+		}
+	}
+
+	let moz_yaml_path = 'gfx/wgpu_bindings/moz.yaml'
+	try {
+		mach vendor $moz_yaml_path --revision $revision
+	} catch {
+		log error $"failed to revendor from `($moz_yaml_path)`"
+	}
+
+	$"Bug ($bug_id) - build\(webgpu\): update WGPU to ($revision) r=#webgpu-reviewers!"
+}
+
+export def "mach vendor" [
+	arg: string,
+	--revision: string,
+] {
+	mut mach_cmd = null
+	try {
+		which ./mach | first | get command
+	} catch {
+		error make --unspanned {
+			msg: "failed to find `mach` script in the CWD"
+		}
+	}
+
+	run-external ./mach vendor $arg
+}
+
+def "gh current-mainline-commit" [
+	org: string,
+	repo: string,
+] {
+	http get $'https://api.github.com/repos/($org)/($repo)/commits?({ per_page: 1 } | url build-query)' | get sha | first
+}
+
+def monday-of-this-week [] {
+	seq date --reverse --days 7
+		| into datetime
+		| where { ($in | format date "%u") == "1" }
+		| first
+		| format date "%Y-%m-%d"
+}
+
 export def "bug create" [input: record<summary: string type: string>] {
 	const BUGZILLA = path self "../bugzilla.nu"
 	use $BUGZILLA
