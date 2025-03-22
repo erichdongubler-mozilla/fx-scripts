@@ -3,7 +3,7 @@ export module revendor-wgpu.nu
 use std/log
 
 def quote-args-for-debugging []: list<string> -> string {
-	$in | each { ['"' $in '"'] | str join } | str join ' '
+	each { $'"($in)"' } | str join ' '
 }
 
 export def "ci dl-reports" [
@@ -27,9 +27,9 @@ export def "ci dl-logs" [
 }
 
 def "ci wptreport-glob" [in_dir: path] {
-	[$in_dir "**/wptreport.json"] |
-		path join |
-		str replace --all '\' '/' | into glob
+	$in_dir
+		| path join "**/wptreport.json"
+		| str replace --all '\' '/' | into glob
 }
 
 def "ci process-reports" [
@@ -67,17 +67,22 @@ def "ci process-reports" [
 
 export def "ci update-expected" [
 	--remove-old,
-	--preset: string@"ci process-reports preset",
+	--preset: string@"ci process-reports preset" | null = null,
 	--in-dir: directory = "../wpt/",
-	--implementation-status: list<string@"ci process-reports implementation-status">,
+	--implementation-status: list<string@"ci process-reports implementation-status"> = [],
 	...revisions: string,
 ] {
 	use std/log [] # set up `log` cmd. state
 
-	let implementation_status_opts = $implementation_status | reduce --fold [] {|status, acc|
-		$acc | append ["--implementation-status" $status]
+	mut args = []
+
+	if $preset != null {
+		$args = $args | append ["--preset" $preset]
 	}
-	ci process-reports update-expected --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions "--preset" $preset ...$implementation_status_opts 
+
+	$args = $args | append ($implementation_status | each { ["--implementation-status" $in] } | flatten)
+
+	ci process-reports update-expected --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions ...$args
 }
 
 export def "ci migrate" [
