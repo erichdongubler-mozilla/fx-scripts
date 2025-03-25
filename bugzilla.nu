@@ -66,6 +66,21 @@ def "rest-api post-json" [
   http post --headers $headers --content-type "application/json" $full_url $input
 }
 
+def "rest-api put-json" [
+  url_path: string,
+  input: any,
+  what: string = "`PUT` request"
+] {
+  use std/log [] # set up `log` cmd. state
+
+  let full_url = $"($HOST)/rest/($url_path)"
+  log debug $"`PUT`ting ($full_url | to nuon)"
+
+  let headers = auth-headers from-api-key --required-for $what
+
+  http put --headers $headers --content-type "application/json" $full_url $input
+}
+
 export def "bug create" [
   input: record<product: string component: string type: string version: string>,
 ] {
@@ -92,6 +107,13 @@ export def "bug get" [
       }
     }
   }
+}
+
+export def "bug update" [
+  id_or_alias: any,
+  input: any,
+] {
+  rest-api put-json $'bug/($id_or_alias)' $input "bug update"
 }
 
 export def "bugs apply-output-fmt" [
