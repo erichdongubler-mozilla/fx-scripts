@@ -81,12 +81,16 @@ def "rest-api put-json" [
   http put --headers $headers --content-type "application/json" $full_url $input
 }
 
+# Create a bug via the `Create Bug` API:
+# <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#create-bug>
 export def "bug create" [
   input: record<product: string component: string type: string version: string>,
 ] {
   rest-api post-json "bug" $input "bug creation"
 }
 
+# Fetch a single bug via the `Search Bugs` API:
+# <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#search-bugs>
 export def "bug get" [
   id_or_alias: any
   --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
@@ -109,6 +113,8 @@ export def "bug get" [
   }
 }
 
+# Update a bug via the `Update Bug` API:
+# <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#rest-update-bug>
 export def "bug update" [
   id_or_alias: any,
   input: any,
@@ -116,6 +122,7 @@ export def "bug update" [
   rest-api put-json $'bug/($id_or_alias)' $input "bug update"
 }
 
+# Apply a filter to the raw data of a bug returned by `bugzilla bug get` and the like.
 export def "bugs apply-output-fmt" [
   fmt: string@"nu-complete bugs output-fmt"
 ]: table<id: any type: any summary: any product: any assigned_to_detail: record<email: string> status: any resolution: any last_change_time: any> -> any {
@@ -162,6 +169,8 @@ def "nu-complete bugs output-fmt" [] {
   ]
 }
 
+# Look up multiple bugs using the `quicksearch` field in the `Search Bugs` API:
+# <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#search-bugs>
 export def "quicksearch" [
   query: string,
   --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
@@ -171,6 +180,8 @@ export def "quicksearch" [
   search --criteria { quicksearch: $query } --output-fmt $output_fmt
 }
 
+# Look up multiple bugs via the `Search Bugs` API:
+# <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#search-bugs>
 export def "search" [
   id_or_alias?: string,
   --criteria: record = {},
