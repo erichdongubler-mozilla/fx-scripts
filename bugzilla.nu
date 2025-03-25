@@ -2,6 +2,8 @@ use std/log
 
 const HOST = "https://bugzilla.mozilla.org"
 
+const USER_AGENT_HEADER = { "User-Agent": "ErichDonGubler-Bugzilla-Nushell/1.0" }
+
 def "auth-headers from-api-key" [
   --required-for: string | null = null,
 ] {
@@ -36,7 +38,9 @@ def "rest-api get-json" [
     "Content-Type": "application/json"
     "Accept": "application/json"
   }
-  $headers = $headers | merge (auth-headers from-api-key --required-for $auth_required_for)
+  $headers = $headers
+    | merge $USER_AGENT_HEADER
+    | merge (auth-headers from-api-key --required-for $auth_required_for)
 
   let response = http get $full_url --headers $headers
   if ("error" in $response and $response.error) {
@@ -62,6 +66,7 @@ def "rest-api post-json" [
   log debug $"`POSTING`ting ($full_url | to nuon)"
 
   let headers = auth-headers from-api-key --required-for $what
+    | merge $USER_AGENT_HEADER
 
   http post --headers $headers --content-type "application/json" $full_url $input
 }
@@ -77,6 +82,7 @@ def "rest-api put-json" [
   log debug $"`PUT`ting ($full_url | to nuon)"
 
   let headers = auth-headers from-api-key --required-for $what
+    | merge $USER_AGENT_HEADER
 
   http put --headers $headers --content-type "application/json" $full_url $input
 }
