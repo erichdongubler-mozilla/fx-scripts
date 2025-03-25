@@ -95,8 +95,8 @@ export def "bug create" [
   rest-api post-json "bug" $input "bug creation"
 }
 
-# Fetch a single bug via the `Search Bugs` API:
-# <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#search-bugs>
+# Fetch a single bug via the `Bug Get` API:
+# <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#get-bug>
 export def "bug get" [
   id_or_alias: any
   --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
