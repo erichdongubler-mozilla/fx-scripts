@@ -1,5 +1,3 @@
-export module revendor-wgpu.nu
-
 use std/log
 
 export def "begin-revendor cts" [
