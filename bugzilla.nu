@@ -7,10 +7,15 @@ const USER_AGENT_HEADER = { "User-Agent": "ErichDonGubler-Bugzilla-Nushell/1.0" 
 def "auth-headers from-api-key" [
   --required-for: string | null = null,
 ] {
+  use std/log [] # set up `log` cmd. state
+
   mut api_key = null
 
+  const env_var_name = 'BUGZILLA_API_KEY'
   try {
-    $api_key = $env.BUGZILLA_API_KEY
+    $api_key = $env | get $env_var_name
+  } catch {
+    log debug $"no `($env_var_name)` defined"
   }
 
   if $api_key != null {
@@ -23,9 +28,11 @@ def "auth-headers from-api-key" [
     } else {
       error make --unspanned {
         msg: ([
-          "failed to get Bugzilla API key via `BUGZILLA_API_KEY` environment variable, "
-          $"and it's required for ($required_for)"
-        ] | str join)
+          "failed to get Bugzilla API key from the following sources:"
+          $"- `($env_var_name)` environment variable"
+          ""
+          $"…and at least one is required for ($required_for)."
+        ] | str join "\n")
       }
     }
   }
