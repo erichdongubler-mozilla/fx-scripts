@@ -18,6 +18,16 @@ def "auth-headers from-api-key" [
     log debug $"no `($env_var_name)` defined"
   }
 
+  const config_path = $'($nu.home-path)/.config/bugzilla.toml'
+  const toml_key = 'api_key'
+  if $api_key == null {
+    try {
+      $api_key = open $config_path | get $toml_key
+    } catch {
+      log debug $"failed to access `($toml_key)` field in `($config_path)`"
+    }
+  }
+
   if $api_key != null {
     {
       'X-BUGZILLA-API-KEY': $api_key
@@ -30,6 +40,7 @@ def "auth-headers from-api-key" [
         msg: ([
           "failed to get Bugzilla API key from the following sources:"
           $"- `($env_var_name)` environment variable"
+          $"- `($toml_key)` field in `($config_path)`"
           ""
           $"…and at least one is required for ($required_for)."
         ] | str join "\n")
