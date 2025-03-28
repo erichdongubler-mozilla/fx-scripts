@@ -7,11 +7,17 @@ const USER_AGENT_HEADER = { "User-Agent": "ErichDonGubler-Bugzilla-Nushell/1.0" 
 def "auth-headers from-api-key" [
   --required-for: string | null = null,
 ] {
+  mut api_key = null
+
   try {
+    $api_key = $env.BUGZILLA_API_KEY
+  }
+
+  if $api_key != null {
     {
-      'X-BUGZILLA-API-KEY': $env.BUGZILLA_API_KEY
+      'X-BUGZILLA-API-KEY': $api_key
     }
-  } catch {
+  } else {
     if $required_for == null {
       {}
     } else {
