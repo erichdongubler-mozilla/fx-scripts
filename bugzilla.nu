@@ -114,7 +114,7 @@ def "rest-api put-json" [
 # Create a bug via the `Create Bug` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#create-bug>
 export def "bug create" [
-  input: record<product: string component: string type: string version: string>,
+  input: record<summary: string product: string component: string type: string version: string>,
 ] {
   rest-api post-json "bug" $input "bug creation"
 }
