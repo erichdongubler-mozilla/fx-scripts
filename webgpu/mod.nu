@@ -2,6 +2,18 @@ export module revendor-wgpu.nu
 
 use std/log
 
+export def "bug create" [input: record<summary: string type: string>] {
+	const BUGZILLA = path self "../bugzilla.nu"
+	use $BUGZILLA
+
+	bugzilla bug create ({
+		product: 'Core'
+		component: 'Graphics: WebGPU'
+		version: 'unspecified'
+		...$input
+	})
+}
+
 def quote-args-for-debugging []: list<string> -> string {
 	each { $'"($in)"' } | str join ' '
 }
