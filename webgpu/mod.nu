@@ -77,16 +77,17 @@ def "ci process-reports" [
 	log info "Done!"
 }
 
-export def "ci update-expected" [
+export def --wrapped "ci update-expected" [
 	--remove-old,
 	--preset: string@"ci process-reports preset",
 	--in-dir: directory = "../wpt/",
 	--implementation-status: list<string@"ci process-reports implementation-status"> = [],
 	revisions: list<string>,
+	...args,
 ] {
 	use std/log [] # set up `log` cmd. state
 
-	mut args = []
+	mut args = $args
 
 	if $preset != null {
 		$args = $args | append ["--preset" $preset]
