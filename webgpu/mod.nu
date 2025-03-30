@@ -82,7 +82,7 @@ export def "ci update-expected" [
 	--preset: string@"ci process-reports preset",
 	--in-dir: directory = "../wpt/",
 	--implementation-status: list<string@"ci process-reports implementation-status"> = [],
-	...revisions: string,
+	revisions: list<string>,
 ] {
 	use std/log [] # set up `log` cmd. state
 
