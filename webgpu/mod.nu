@@ -38,6 +38,10 @@ export def "ci dl-logs" [
 	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/logs/live_backing.log' --out-dir $in_dir ...$revisions
 }
 
+export def "ci device-init-fail-regex" []: nothing -> string {
+  'WebGPU device failed to initialize'
+}
+
 def "ci wptreport-glob" [in_dir: path] {
 	$in_dir
 		| path join "**/wptreport.json"
