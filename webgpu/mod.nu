@@ -39,7 +39,7 @@ export def "ci dl-logs" [
 }
 
 export def "ci device-init-fail-regex" []: nothing -> string {
-  'WebGPU device failed to initialize'
+	'WebGPU device failed to initialize'
 }
 
 def "ci wptreport-glob" [in_dir: path] {
