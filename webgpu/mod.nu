@@ -44,13 +44,57 @@ export def "begin-revendor wgpu" [
 ] {
 	use std/log [] # set up `log` cmd. state
 
+	mut mach_cmd = null
+	try {
+		$mach_cmd = which ./mach | first | get command
+	} catch {
+		error make --unspanned {
+			msg: "failed to find `./mach` script in the CWD."
+		}
+	}
+
+	try {
+		which cargo-vet | first
+	} catch {
+		error make --unspanned {
+			msg: "failed to find `cargo vet` binary in `PATH`"
+		}
+	}
+
+	let moz_yaml_path = 'gfx/wgpu_bindings/moz.yaml'
+	let moz_yaml = open $moz_yaml_path
+
+	if not (
+		$moz_yaml.vendoring.flavor == 'rust' and
+		$moz_yaml.vendoring.url == 'https://github.com/gfx-rs/wgpu/' and
+		true
+	) {
+		error make --unspanned {
+			msg: $"unfamiliar `vendoring.{flavor,url}` at `($moz_yaml_path)`"
+		}
+	}
+
+	let old_revision = $moz_yaml.origin.revision
+
+	let new_revision = ^$mach_cmd vendor --check-for-update $moz_yaml_path
+		| parse '{revision} {date}'
+		| get revision
+
+	let wgpu_crates_to_audit = cargo metadata --format-version 1
+		| from json
+		| get packages
+		| where {
+			$in.source != null and $in.source == $'git+($moz_yaml.vendoring.url)?rev=(old_revision)#(old_revision)'
+		}
+		| select name version
+
+	for crate in $wgpu_crates_to_audit {
+		# TODO: What if the new version is not the same?
+		cargo vet $crate.name $'($crate.version)@git:($old_revision)' $'($crate.version)@git:($new_revision)'
+	}
+
 	const BUGZILLA = path self "../bugzilla.nu"
 	use $BUGZILLA
-
-	mut revision = $revision
-	if $revision == null {
-		$revision = gh current-mainline-commit gfx-rs wgpu
-	}
 
 	mut $assigned_to = $assigned_to
 	if $assigned_to == null {
@@ -73,23 +117,13 @@ export def "begin-revendor wgpu" [
 		priority: P1
 	} | get id
 
-	mut mach_cmd = null
 	try {
-		which ./mach | first | get command
-	} catch {
-		error make --unspanned {
-			msg: "failed to find `mach` script in the CWD."
-		}
-	}
-
-	let moz_yaml_path = 'gfx/wgpu_bindings/moz.yaml'
-	try {
-		mach vendor $moz_yaml_path --revision $revision
+		^$mach_cmd vendor $moz_yaml_path --revision $new_revision
 	} catch {
 		log error $"failed to revendor from `($moz_yaml_path)`"
 	}
 
-	$"Bug ($bug_id) - build\(webgpu\): update WGPU to ($revision) r=#webgpu-reviewers!"
+	$"Bug ($bug_id) - build\(webgpu\): update WGPU to ($new_revision) r=#webgpu-reviewers!"
 }
 
 export def "mach vendor" [
@@ -212,6 +246,8 @@ def "ci process-reports" [
 	--revisions: list<string>,
 	...additional_args
 ] {
+	use std/log [] # set up `log` cmd. state
+
 	let in_dir = do {
 		let path_sep_chars = [$'\(char path_sep)' '\/'] | uniq
 		$in_dir | str replace --regex $"[($path_sep_chars)]$" ""
