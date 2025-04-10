@@ -42,6 +42,42 @@ export def "ci device-init-fail-regex" []: nothing -> string {
 	'WebGPU device failed to initialize'
 }
 
+export def "ci meta path-and-line" [
+	cts_test_path: string,
+]: nothing -> nothing {
+	use std/log [] # set up `log` cmd. state
+
+	let parsed = $cts_test_path | parse 'webgpu:{test_group}:{rest}' | first
+	let test_group_path_segments = $parsed.test_group | str replace --all ',' '/'
+
+	let test_file_path = $'testing/web-platform/mozilla/meta/webgpu/cts/webgpu/($test_group_path_segments)/cts.https.html.ini'
+	log debug $'test_file_path: ($test_file_path | to nuon)'
+	if $parsed.rest == '*' {
+		echo $test_file_path
+	} else {
+		let parsed = $parsed | merge ($parsed.rest | parse '{test_name}:{rest}' | first)
+
+		let rg_search_term = $'^\[cts.https.html\?.*?q=webgpu:($parsed.test_group):($parsed.test_name):\*\]$'
+		log debug $'rg_search_term: ($rg_search_term | to nuon)'
+
+		let matching_line_nums = rg --line-number $rg_search_term $test_file_path | parse '{line_num}:{junk}' | get line_num
+		let file_edit_args = $matching_line_nums | each { $'($test_file_path):($in)' }
+
+		if ($matching_line_nums | length) != 1 {
+			error make --unspanned {
+				msg: $'internal error: expected 1 match, got ($matching_line_nums): ($file_edit_args | to nuon --indent 2)'
+			}
+		}
+
+		let file_edit_arg = $file_edit_args | first
+		if $parsed.rest == '*' {
+			$file_edit_arg
+		} else {
+			'TODO'
+		}
+	}
+}
+
 def "ci wptreport-glob" [in_dir: path] {
 	$in_dir
 		| path join "**/wptreport.json"
