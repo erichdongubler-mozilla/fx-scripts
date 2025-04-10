@@ -1,6 +1,6 @@
 [revset-aliases]
 "immutable_heads()" = """
-trunk() | tags()
+builtin_immutable_heads()
 | remote_bookmarks(regex:'^v\\d+$', 'upstream')
 | remote_bookmarks(glob:'v0.*', 'upstream')
 | staging@upstream
