@@ -1,7 +1,7 @@
 [revset-aliases]
 "immutable_heads()" = """
 trunk() | tags()
-| remote_bookmarks('v22', 'upstream')
+| remote_bookmarks(regex:'^v\\d+$', 'upstream')
 | remote_bookmarks(glob:'v0.*', 'upstream')
 | staging@upstream
 """
