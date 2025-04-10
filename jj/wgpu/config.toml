@@ -5,3 +5,11 @@ builtin_immutable_heads()
 | remote_bookmarks(glob:'v0.*', 'upstream')
 | staging@upstream
 """
+
+[fix.tools.taplo]
+command = ["taplo", "format", "--stdin-filepath=$path", "-"]
+patterns = ["glob:'**/*.toml'"]
+
+[fix.tools.rustfmt]
+command = ["rustfmt", "--emit=stdout", "--edition=2021"]
+patterns = ["glob:'**/*.rs'"]
