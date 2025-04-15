@@ -2,7 +2,7 @@ export module revendor-wgpu.nu
 
 use std/log
 
-export def "bug create" [input: record<summary: string type: string>] {
+export def "bug create" [input: record<summary: string>] {
 	const BUGZILLA = path self "../bugzilla.nu"
 	use $BUGZILLA
 
@@ -10,6 +10,7 @@ export def "bug create" [input: record<summary: string type: string>] {
 		product: 'Core'
 		component: 'Graphics: WebGPU'
 		version: 'unspecified'
+		type: 'task'
 		...$input
 	})
 }
