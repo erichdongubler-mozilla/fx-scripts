@@ -7,8 +7,8 @@ def mach [...args: string] {
 	run-external $cmd ...$args
 }
 
-def "cargo metadata" [] {
-	^cargo metadata --format-version 1 | from json
+def "cargo metadata" --wrapped [...args] {
+	^cargo metadata --format-version 1 ...$args | from json
 }
 
 const WGPU_REPO_URL = "https://github.com/gfx-rs/wgpu"
