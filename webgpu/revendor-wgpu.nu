@@ -123,15 +123,35 @@ export def "with-local" [
     }
   }
 
+  let wgpu_metadata = cargo metadata --manifest-path ($wgpu_ckt_dir | path join Cargo.toml)
+  let wgpu_workspace_members = $wgpu_metadata.workspace_members
+    | parse --regex '^path\+file:///(?P<path>.*)#(?:(?P<original_name>[\w-]+)@)?(?P<version>\d+\.\d+\.\d+)$'
+    | insert name {
+      if ($in.original_name | is-not-empty) {
+        $in.original_name
+      } else {
+        $in.path | path basename
+      }
+    }
+    | reject original_name
+
   let patches_section = [
     $'[patch."($WGPU_REPO_URL)"]'
     ...(
       $resolved_crates
+        | wrap name
+        | join --left $wgpu_workspace_members name
         | each {
-          $'"($in)" = { path = "($wgpu_ckt_dir)/($in)" }'
+          $'"($in.name)" = { path = "($in.path)" }'
         }
     )
   ] | str join "\n"
+
+  if $WGPU_REPO_URL in (open $cargo_manifest_path | get patch | columns) {
+    error make --unspanned {
+      msg: $"`patch.(WGPU_REPO_URL)` already in Gecko checkout's `Cargo.toml`; please remove it before continuing"
+    }
+  }
 
   $"\n($patches_section)" | save --append $cargo_manifest_path
   cargo fetch --manifest-path $cargo_manifest_path
