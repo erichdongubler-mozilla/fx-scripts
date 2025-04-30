@@ -92,6 +92,8 @@ def "ci process-reports" [
 	--revisions: list<string>,
 	...additional_args
 ] {
+	use std/log [] # set up `log` cmd. state
+
 	let in_dir = do {
 		let path_sep_chars = [$'\(char path_sep)' '\/'] | uniq
 		$in_dir | str replace --regex $"[($path_sep_chars)]$" ""
