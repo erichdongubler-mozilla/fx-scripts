@@ -23,8 +23,11 @@ export def "generate" [
       $options = $options | append 'ac_add_options --disable-optimize'
     }
     "disable-webgpu" => {
-      $options = $options
-        | append $'ac_add_options MOZ_BUILD_HOOK=($SCRIPT_PATH | path dirname | path join webgpu buildhook.py)'
+      let hook_script_path = $SCRIPT_PATH
+        | path dirname
+        | path join webgpu buildhook.py
+        | str replace '\' '/' --all # `mach build` doesn't handle native Windows hook script paths. >:(
+      $options = $options | append $'ac_add_options MOZ_BUILD_HOOK=($hook_script_path)'
     }
     "enable" => {}
   }
