@@ -90,6 +90,7 @@ def "ci process-reports" [
 	--remove-old,
 	--in-dir: directory = "../wpt/",
 	--revisions: list<string>,
+	--dl = true,
 	...additional_args
 ] {
 	use std/log [] # set up `log` cmd. state
@@ -105,7 +106,9 @@ def "ci process-reports" [
 		}
 	}
 
-	ci dl-reports --in-dir $in_dir ...$revisions
+	if $dl {
+		ci dl-reports --in-dir $in_dir ...$revisions
+	}
 
 	let revision_glob_opts = $revisions | reduce --fold [] {|rev, acc|
 		$acc | append [
@@ -125,6 +128,7 @@ export def --wrapped "ci update-expected" [
 	--preset: string@"ci process-reports preset",
 	--in-dir: directory = "../wpt/",
 	--implementation-status: list<string@"ci process-reports implementation-status"> = [],
+	--dl = true,
 	revisions: list<string>,
 	...args,
 ] {
@@ -138,7 +142,7 @@ export def --wrapped "ci update-expected" [
 
 	$args = $args | append ($implementation_status | each { ["--implementation-status" $in] } | flatten)
 
-	ci process-reports update-expected --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions ...$args
+	ci process-reports update-expected --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions --dl $dl ...$args
 }
 
 export def "ci migrate" [
