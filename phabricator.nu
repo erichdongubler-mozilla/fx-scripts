@@ -30,6 +30,14 @@ export def "conduit api" [
   $response.body.result
 }
 
+# Make an API call to Phabricator's `user.whoami` endpoint.
+#
+# See also: <https://phabricator.services.mozilla.com/conduit/method/user.whoami/>
+export def "conduit user whoami" [
+] {
+    conduit api 'user.whoami' {}
+}
+
 export def "token-for-host" [
   host: string = $DEFAULT_HOST,
 ] {
