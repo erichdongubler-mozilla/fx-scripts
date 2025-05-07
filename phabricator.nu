@@ -30,6 +30,19 @@ export def "conduit api" [
   $response.body.result
 }
 
+# Make an API call to Phabricator's `differential.revision.search` endpoint.
+#
+# See also: <https://phabricator.services.mozilla.com/conduit/method/differential.diff.search/>
+export def "conduit differential revision search" [
+  --fields: record = {}, # Specify search fields manually
+] {
+  mut query = {}
+
+  $query = $query | merge $fields
+
+  conduit api 'differential.revision.search' $query
+}
+
 # Make an API call to Phabricator's `user.whoami` endpoint.
 #
 # See also: <https://phabricator.services.mozilla.com/conduit/method/user.whoami/>
