@@ -126,6 +126,7 @@ def "ci process-reports" [
 export def --wrapped "ci update-expected" [
 	--remove-old,
 	--preset: string@"ci process-reports preset",
+    --on-skip-only: string@"ci update-expected on-skip-only",
 	--in-dir: directory = "../wpt/",
 	--implementation-status: list<string@"ci process-reports implementation-status"> = [],
 	--dl = true,
@@ -139,6 +140,10 @@ export def --wrapped "ci update-expected" [
 	if $preset != null {
 		$args = $args | append ["--preset" $preset]
 	}
+
+    if $on_skip_only != null {
+        $args = $args | append ["--on-skip-only" $on_skip_only]
+    }
 
 	$args = $args | append ($implementation_status | each { ["--implementation-status" $in] } | flatten)
 
@@ -168,6 +173,13 @@ def "ci process-reports implementation-status" [] {
 		"implementing"
 		"backlog"
 		"not-implementing"
+	]
+}
+
+def "ci update-expected on-skip-only" [] {
+	[
+      "reconcile"
+      "ignore",
 	]
 }
 
