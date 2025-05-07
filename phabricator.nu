@@ -34,6 +34,11 @@ export def "conduit api" [
 #
 # See also: <https://phabricator.services.mozilla.com/conduit/method/differential.revision.edit/>
 export def "conduit differential revision edit" [
+  phid: oneof<nothing, string> = null,
+  --author: oneof<nothing, string@"nu-complete conduit differential revision author">
+  --reviewers: oneof<nothing, record<add: list<string> remove: list<string> set: list<string>>>
+  --children: record<add: list<string> remove: list<string> set: list<string>>
+  --parents: record<add: list<string> remove: list<string> set: list<string>>
   --fields: record = {}, # Specify transaction fields manually.
 ] {
   mut transaction = {}
@@ -47,12 +52,25 @@ export def "conduit differential revision edit" [
 #
 # See also: <https://phabricator.services.mozilla.com/conduit/method/differential.diff.search/>
 export def "conduit differential revision search" [
+  # Asdf
+  --ids: list<int> = [],
   --query-key: string@'nu-complete differential revision search query-key' = 'active', # A built-in or saved query key.
   --fields: record = {}, # Specify search fields manually
 ] {
   mut query = {}
 
   $query = $query | merge $fields
+
+  if ($ids | is-not-empty) {
+    let id_constraints = $ids
+      | enumerate
+      | reduce --fold {} {|it, acc|
+        $acc | merge {
+          $'constraints[ids][($it.index)]': $it.item
+        }
+      }
+    $constraints = $constraints | merge $id_constraints
+  }
 
   let query = ({
     'queryKey': $query_key
@@ -66,6 +84,10 @@ def "nu-complete differential revision search query-key" [] {
     'active'
     'all'
   ]
+}
+
+def "nu-complete revision author" [] {
+  conduit api 'users.search'
 }
 
 # Make an API call to Phabricator's `user.whoami` endpoint.
