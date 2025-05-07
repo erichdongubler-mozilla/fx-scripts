@@ -30,6 +30,19 @@ export def "conduit api" [
   $response.body.result
 }
 
+# Make an API call to Phabricator's `differential.revision.edit` endpoint.
+#
+# See also: <https://phabricator.services.mozilla.com/conduit/method/differential.revision.edit/>
+export def "conduit differential revision edit" [
+  --fields: record = {}, # Specify transaction fields manually.
+] {
+  mut transaction = {}
+
+  $transaction = $transaction | merge $fields
+
+  conduit api 'differential.revision.edit' $transaction
+}
+
 # Make an API call to Phabricator's `user.whoami` endpoint.
 #
 # See also: <https://phabricator.services.mozilla.com/conduit/method/user.whoami/>
