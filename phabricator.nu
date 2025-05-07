@@ -90,6 +90,114 @@ def "nu-complete revision author" [] {
   conduit api 'users.search'
 }
 
+def "nu-complete revision testing-tag" [] {
+  revision testing-tags | each {
+    {
+      value: $in.phid
+      description: $in.fields.name
+      style: {
+        fg: $in.fields.color.key
+      }
+    }
+  }
+}
+
+export def "revision testing-tags" [] {
+  conduit api 'project.search' {
+    'constraints[icons][0]': 'tag'
+    'constraints[query]': 'testing'
+  } | get data
+}
+
+# A convenience API over `phabricator conduit differential revision edit`.
+export def "revision submit-comment" [
+  object_identifier: oneof<nothing, string> = null,
+  --comment: oneof<nothing, string> = null,
+  --testing-tag: oneof<nothing, string@'nu-complete revision testing-tag'> = null,
+  --author: oneof<nothing, string@"nu-complete revision author"> = null,
+  --commandeer,
+  # A convenience that does the same as `--author (phabricator conduit user whoami).phid`.
+] {
+  # Get the current revision
+  mut search_fields = {
+    'queryKey': 'all'
+  }
+
+  # if ($phid != null) {
+  #   # TODO: validate this works
+  #   $search_fields = $search_fields | merge { 'constraints[phids][0]': $phid }
+  # }
+  # 
+  # if ($id != null) {
+  #   # TODO: validate this works
+  #   $search_fields = $search_fields | merge { 'constraints[ids][0]': $id }
+  # }
+  # 
+  # if ($diff_id != null) {
+  #   # TODO: validate this works
+  #   let id = $diff_id | parse 'D{id}' | first --strict
+  #   $search_fields = $search_fields | merge { 'constraints[ids][0]': $diff_id }
+  # }
+
+  let search_results = conduit differential revision search --fields $search_fields
+    | get data
+
+  let current_revision_fields = match ($search_results | length) {
+    0 => {
+      # TODO: refine
+      error make {
+        msg: "no thingy found"
+      }
+    }
+    1 => {
+      $search_results | first --strict
+    }
+    _ => {
+      # TODO: refine
+      error make {
+        msg: "too many thingies"
+      }
+    }
+  }
+
+  mut transaction = {}
+
+  if ($author != null) and $commandeer {
+    error make {
+      msg: "`--author` and `--commandeer` cannot be used at the same time"
+      labels: [
+        {
+          text: ''
+          span: (metadata $author).span
+        }
+        {
+          text: ''
+          span: (metadata $commandeer).span
+        }
+      ]
+    }
+  }
+
+  if $commandeer {
+    $transaction = $transaction | merge { 'author': (conduit user whoami).phid }
+  }
+
+  if ($author != null) {
+    $transaction = $transaction | merge { 'author': $author }
+  }
+
+  if ($comment != null) {
+    $transaction = $transaction | merge { 'comment': $comment }
+  }
+
+  if ($testing_tag != null) {
+    # TODO: Validate this works.
+    $transaction = $transaction | merge { 'project': $comment }
+  }
+
+  conduit differential revision edit $current_revision_fields.phid --fields $transaction
+}
+
 # Make an API call to Phabricator's `user.whoami` endpoint.
 #
 # See also: <https://phabricator.services.mozilla.com/conduit/method/user.whoami/>
