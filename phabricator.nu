@@ -47,13 +47,25 @@ export def "conduit differential revision edit" [
 #
 # See also: <https://phabricator.services.mozilla.com/conduit/method/differential.diff.search/>
 export def "conduit differential revision search" [
+  --query-key: string@'nu-complete differential revision search query-key' = 'active', # A built-in or saved query key.
   --fields: record = {}, # Specify search fields manually
 ] {
   mut query = {}
 
   $query = $query | merge $fields
 
+  let query = ({
+    'queryKey': $query_key
+  } | merge $constraints)
+
   conduit api 'differential.revision.search' $query
+}
+
+def "nu-complete differential revision search query-key" [] {
+  [
+    'active'
+    'all'
+  ]
 }
 
 # Make an API call to Phabricator's `user.whoami` endpoint.
