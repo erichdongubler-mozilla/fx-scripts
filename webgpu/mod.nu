@@ -36,7 +36,9 @@ export def "ci dl-logs" [
 ] {
 	use std/log [] # set up `log` cmd. state
 
-	treeherder-dl --job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/logs/live_backing.log' --out-dir $in_dir ...$revisions
+    let args = [--job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/logs/live_backing.log' --out-dir $in_dir ...$revisions]
+    log info $"Downloading logs via `treeherder-dl ($args | quote-args-for-debugging)`…"
+    treeherder-dl ...$args
 }
 
 export def "ci device-init-fail-regex" []: nothing -> string {
