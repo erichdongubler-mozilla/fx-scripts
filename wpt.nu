@@ -23,6 +23,7 @@ export def "find-timed-out-tasks" [
     "file-list" => $found
     "tree" => {
       $found
+        | str replace '\' '/' --all
         | str replace $dir ''
         | str replace --regex '^(.*?)/(?:0/)?public/logs/live_backing\.log$' '$1'
         | str join "\n"
