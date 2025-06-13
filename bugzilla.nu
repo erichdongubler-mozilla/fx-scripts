@@ -122,7 +122,7 @@ export def "bug create" [
 # Fetch a single bug via the `Bug Get` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#get-bug>
 export def "bug get" [
-  id_or_alias: any
+  id_or_alias: oneof<int, string>,
   --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
 ] {
   use std/log [] # set up `log` cmd. state
@@ -146,7 +146,7 @@ export def "bug get" [
 # Update a bug via the `Update Bug` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#rest-update-bug>
 export def "bug update" [
-  id_or_alias: any,
+  id_or_alias: oneof<int, string>,
   input: any,
 ] {
   rest-api put-json $'bug/($id_or_alias)' $input "bug update"
@@ -213,7 +213,7 @@ export def "quicksearch" [
 # Look up multiple bugs via the `Search Bugs` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#search-bugs>
 export def "search" [
-  id_or_alias?: string,
+  id_or_alias?: oneof<int, string>,
   --criteria: record = {},
   --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
 ] {
