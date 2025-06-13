@@ -155,7 +155,7 @@ export def "bug update" [
 # Apply a filter to the raw data of a bug returned by `bugzilla bug get` and the like.
 export def "bugs apply-output-fmt" [
   fmt: string@"nu-complete bugs output-fmt"
-]: table<id: any type: any summary: any product: any assigned_to_detail: record<email: string> status: any resolution: any last_change_time: any> -> any {
+]: table<id: int type: any summary: any product: any assigned_to_detail: record<email: string> status: any resolution: any last_change_time: any> -> any {
   use std/log [] # set up `log` cmd. state
 
   let bugs = $in
