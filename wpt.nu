@@ -31,7 +31,7 @@ def "find-timed-out-tasks report" [
 }
 
 # Find timed out tasks with `live_backing.log`s.
-export def "find-timed-out-tasks" [
+export def "find-timed-out-tasks via-log" [
   dir: string,
   # A directory containing `live_backing.log` files.
   --output: string@"nu-complete find-timed-out-tasks output" = "tree",
