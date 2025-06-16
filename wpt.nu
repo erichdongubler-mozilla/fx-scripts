@@ -13,7 +13,7 @@ export def "find-timed-out-tasks" [
   # If downloaded using `treeherder-dl` and `tree` is specified, printed results have their leading
   # `$dir` and trailing `public/logs/live_backing.log` trimmed. If the retry number (the segment
   # preceding `public`) is `0`, it is also omitted.
-] {
+]: nothing -> oneof<list<string>, string> {
   let found = rg --files-with-matches (task-timeout-regex) $dir --glob $'**/live_backing.log'
     | lines
     | uniq
