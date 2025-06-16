@@ -30,6 +30,27 @@ def "find-timed-out-tasks report" [
   }
 }
 
+# Find timed out tasks with `wptreport.json`s.
+export def "find-timed-out-tasks via-report" [
+  dir: string,
+  # A directory containing `live_backing.log` files.
+  --output: string@"nu-complete find-timed-out-tasks output" = "tree",
+  # The output format to use for this script.
+  #
+  # If downloaded using `treeherder-dl` and `tree` is specified, printed results have their leading
+  # `$dir` and trailing `public/test_info/wptreport.json` trimmed. If the retry number (the segment
+  # preceding `public`) is `0`, it is also omitted.
+]: list<string> -> oneof<list<string>, string> {
+  # NOTE: A present, but empty, `wptreport.json` indicates that `wptrunner` didn't successfully
+# write the report. We assume this is due to a task timeout, rather than some other cause.
+  rg --files --glob '**/wptreport.json' $dir
+    | lines
+    | ls ...$in
+    | where size == 0B
+    | get name
+    | find-timed-out-tasks report --dir $dir --artifact-path-re 'public/test_info/wptreport\.json' --output $output
+}
+
 # Find timed out tasks with `live_backing.log`s.
 export def "find-timed-out-tasks via-log" [
   dir: string,
