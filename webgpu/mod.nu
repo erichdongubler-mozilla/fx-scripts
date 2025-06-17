@@ -177,8 +177,7 @@ export def "bug create" [input: record<summary: string>] {
 		component: 'Graphics: WebGPU'
 		version: 'unspecified'
 		type: 'task'
-		...$input
-	})
+	} | merge $input)
 }
 
 def quote-args-for-debugging []: list<string> -> string {
