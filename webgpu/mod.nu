@@ -173,11 +173,14 @@ def monday-of-this-week [] {
 		| format date "%Y-%m-%d"
 }
 
-export def "bug create" [input: record<summary: string>] {
+export def "bug create" [
+	--assign-to-me,
+	input: record<summary: string>,
+] {
 	const BUGZILLA = path self "../bugzilla.nu"
 	use $BUGZILLA
 
-	bugzilla bug create ({
+	bugzilla bug create --assign-to-me=$assign_to_me ({
 		product: 'Core'
 		component: 'Graphics: WebGPU'
 		version: 'unspecified'

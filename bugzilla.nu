@@ -114,8 +114,24 @@ def "rest-api put-json" [
 # Create a bug via the `Create Bug` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#create-bug>
 export def "bug create" [
+  --assign-to-me,
   input: record<summary: string product: string component: string type: string version: string>,
 ] {
+  use std/log [] # set up `log` cmd. state
+
+  mut input = $input
+
+  if $assign_to_me {
+    if assigned_to in $input {
+      log warning ([
+        "conflicting assignment info. provided; "
+        $"both `--assign-to-me` and the `assigned_to` field \(($input.assigned_to | to nuon)\) "
+        "were specified; assigning to self"
+      ] | str join)
+    }
+    $input = $input | merge { assigned_to: (whoami | get name) }
+  }
+
   rest-api post-json "bug" $input "bug creation"
 }
 
