@@ -181,10 +181,10 @@ export def "bugs apply-output-fmt" [
   }
 }
 
-def "bugs parse-response" []: any -> any {
+def "parse-response get" [success_field_name: string]: any -> any {
   let response = $in
   if not ("faults" in $response) or ($response.faults | is-empty) {
-    $response.bugs
+    $response | get $success_field_name
   } else {
     error make --unspanned {
       msg: $"`faults` found in response: ($response.faults | to nuon)"
@@ -226,7 +226,7 @@ export def "search" [
     $"/($id_or_alias)"
   }
   rest-api get-json $"bug($final_path_segment)?($criteria | url build-query)"
-    | bugs parse-response
+    | parse-response get "bugs"
     | bugs apply-output-fmt $output_fmt
 }
 
