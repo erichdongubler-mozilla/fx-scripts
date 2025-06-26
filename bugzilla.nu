@@ -230,10 +230,6 @@ export def "search" [
     | bugs apply-output-fmt $output_fmt
 }
 
-export def "whoami" []: nothing -> record<id: int real_name: string nick: string name: string> {
-  rest-api get-json "whoami" --auth-required-for "`whoami` queries"
-}
-
 export def "user get" [
   --match: oneof<nothing, string> = null,
   ...ids_or_names: oneof<int, string>,
@@ -298,4 +294,8 @@ export def "user get" [
     }
   }
     | parse-response get "users"
+}
+
+export def "whoami" []: nothing -> record<id: int real_name: string nick: string name: string> {
+  rest-api get-json "whoami" --auth-required-for "`whoami` queries"
 }
