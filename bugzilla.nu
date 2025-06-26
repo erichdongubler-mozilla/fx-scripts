@@ -262,6 +262,21 @@ def "ids-or-names" []: list<oneof<int, string>> -> record<ids: list<int>, names:
   }
 }
 
+def "nu-complete product list output-fmt" [] {
+  [
+    "full"
+    "ids-only"
+  ]
+}
+
+def "nu-complete product type" [] {
+  [
+    "selectable"
+    "enterable"
+    "accessible"
+  ]
+}
+
 def "nu-complete bug type" [] {
   [
     "defect"
@@ -302,6 +317,30 @@ export def "product get" [
 
   rest-api get-json $'product($ids_or_names | ids-or-names)'
     | parse-response get "products"
+}
+
+export def "product list" [
+  --type: string@"nu-complete product type" = "enterable",
+  --output-fmt: string@"nu-complete product list output-fmt" = "full",
+]: nothing -> record<ids: list<int>> {
+  match $output_fmt {
+    "full" => {
+      # NOTE: We don't use `product get` here to sidestep validation for a non-zero number of ID(s)
+      # or name(s).
+      rest-api get-json $'product?type=($type)' | parse-response get "products"
+    }
+    "ids-only" => {
+      rest-api get-json $'product_($type)' | parse-response get "ids"
+    }
+    _ => {
+      error make {
+        msg: $"unrecognized output format `($output_fmt)`"
+        label: {
+          span: (metadata $output_fmt).span
+        }
+      }
+    }
+  }
 }
 
 # Look up multiple bugs using the `quicksearch` field in the `Search Bugs` API:
