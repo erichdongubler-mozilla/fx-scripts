@@ -117,6 +117,7 @@ export def "bug create" [
   --assign-to-me,
   --type: oneof<nothing, string@"nu-complete bug type"> = null,
   --summary: oneof<nothing, string> = null,
+  --description: oneof<nothing, string> = null,
   --product: oneof<nothing, string> = null,
   --component: oneof<nothing, string> = null,
   --version: string = "unspecified",
@@ -152,6 +153,7 @@ export def "bug create" [
     )
     | merge_with_input "type" "--type" $type
     | merge_with_input "summary" "--summary" $summary
+    | merge_with_input "description" "--description" $description
     | merge_with_input "product" "--product" $product
     | merge_with_input "component" "--component" $component
     | merge_with_input "version" "--version" $version
