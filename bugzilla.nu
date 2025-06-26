@@ -223,6 +223,45 @@ export def "bugs apply-output-fmt" [
   }
 }
 
+def "ids-or-names" []: list<oneof<int, string>> -> record<ids: list<int>, names: list<string>> {
+  let ids_or_names = $in
+
+  match ($ids_or_names | length) {
+    0 => {
+      error make {
+        msg: "internal error: empty list provided to `ids-or-names`"
+        span: (metadata $ids_or_names).span
+      }
+    }
+    1 => {
+      $"/($ids_or_names | first)"
+    }
+    _ => {
+      # NOTE: We checked that `--match` must not be populated above.
+      $ids_or_names
+        | reduce --fold {} {|id_or_name, acc|
+          match ($id_or_name | describe) {
+            "int" => {
+              $acc | upsert ids { default [] | append $id_or_name }
+            }
+            "string" => {
+              $acc | upsert names { default [] | append $id_or_name }
+            }
+            $type => {
+              error make --unspanned {
+                msg: ([
+                  $"internal error: unexpected type `($type)` "
+                  "in element of `$ids_or_names`"
+                ] | str join)
+              }
+            }
+          }
+        }
+        | $"?($in | url build-query)"
+    }
+  }
+}
+
 def "nu-complete bug type" [] {
   [
     "defect"
@@ -316,31 +355,9 @@ export def "user get" [
       # NOTE: We checked that `--match` must be populated above.
       rest-api get-json $"user?match=($match)"
     }
-    1 => {
-      rest-api get-json $"user/($ids_or_names | first)"
-    }
     _ => {
       # NOTE: We checked that `--match` must not be populated above.
-      $ids_or_names
-        | reduce --fold {} {|id_or_name, acc|
-          match ($id_or_name | describe) {
-            "int" => {
-              $acc | upsert ids { default [] | append $id_or_name }
-            }
-            "string" => {
-              $acc | upsert names { default [] | append $id_or_name }
-            }
-            $type => {
-              error make --unspanned {
-                msg: ([
-                  $"internal error: unexpected type `($type)` "
-                  "in element of `$ids_or_names`"
-                ] | str join)
-              }
-            }
-          }
-        }
-        | rest-api get-json $"user?($in | url build-query)"
+      rest-api get-json $'user($ids_or_names | ids-or-names)'
     }
   }
     | parse-response get "users"
