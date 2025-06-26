@@ -233,3 +233,69 @@ export def "search" [
 export def "whoami" []: nothing -> record<id: int real_name: string nick: string name: string> {
   rest-api get-json "whoami" --auth-required-for "`whoami` queries"
 }
+
+export def "user get" [
+  --match: oneof<nothing, string> = null,
+  ...ids_or_names: oneof<int, string>,
+]: nothing -> record<> {
+  if $match == null and ($ids_or_names | is-empty) {
+    error make --unspanned {
+      msg: "no ID(s), name(s), or `--match` string provided"
+    }
+  }
+
+  if $match != null and ($ids_or_names | is-not-empty) {
+    error make {
+      msg: ([
+        "both `--match` and ID(s)/name(s) were specified"
+      ] | str join)
+      label: {
+        text: ""
+        span: (
+          [
+            (metadata $ids_or_names).span
+            (metadata $match).span
+          ] | {
+            start: ($in | get start | math min)
+            end: ($in | get end | math max)
+          }
+        )
+      }
+      help: "only one at a time is supported"
+    }
+  }
+
+  match ($ids_or_names | length) {
+    0 => {
+      # NOTE: We checked that `--match` must be populated above.
+      rest-api get-json $"user?match=($match)"
+    }
+    1 => {
+      rest-api get-json $"user/($ids_or_names | first)"
+    }
+    _ => {
+      # NOTE: We checked that `--match` must not be populated above.
+      $ids_or_names
+        | reduce --fold {} {|id_or_name, acc|
+          match ($id_or_name | describe) {
+            "int" => {
+              $acc | upsert ids { default [] | append $id_or_name }
+            }
+            "string" => {
+              $acc | upsert names { default [] | append $id_or_name }
+            }
+            $type => {
+              error make --unspanned {
+                msg: ([
+                  $"internal error: unexpected type `($type)` "
+                  "in element of `$ids_or_names`"
+                ] | str join)
+              }
+            }
+          }
+        }
+        | rest-api get-json $"user?($in | url build-query)"
+    }
+  }
+    | parse-response get "users"
+}
