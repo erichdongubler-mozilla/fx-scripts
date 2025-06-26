@@ -115,22 +115,46 @@ def "rest-api put-json" [
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#create-bug>
 export def "bug create" [
   --assign-to-me,
-  input: record<summary: string product: string component: string type: string version: string>,
+  --type: oneof<nothing, string> = null,
+  --summary: oneof<nothing, string> = null,
+  --product: oneof<nothing, string> = null,
+  --component: oneof<nothing, string> = null,
+  --version: string = "unspecified",
+  --extra: record = {},
 ] {
   use std/log [] # set up `log` cmd. state
 
-  mut input = $input
+  def "merge_with_input" [
+    field_name: string,
+    option_name: string,
+    option_value: any,
+  ]: record -> record {
+    mut input = $in
 
-  if $assign_to_me {
-    if assigned_to in $input {
-      log warning ([
-        "conflicting assignment info. provided; "
-        $"both `--assign-to-me` and the `assigned_to` field \(($input.assigned_to | to nuon)\) "
-        "were specified; assigning to self"
-      ] | str join)
+    if $option_value != null {
+      if $field_name in $input {
+        log warning ([
+          "conflicting assignment info. provided; "
+          $"both the option `($option_name)` and the `($field_name)` field "
+          $"in `extra` \(($input | get $field_name | to nuon)\) "
+          "were specified; resolving with the option's value"
+        ] | str join)
+      }
+      $input = $input | merge ({} | insert $field_name $option_value )
     }
-    $input = $input | merge { assigned_to: (whoami | get name) }
+
+    $input
   }
+
+  let input = $extra
+    | merge_with_input "assigned_to" "--assign-to-me" (
+      if $assign_to_me { (whoami | get name) } else { null }
+    )
+    | merge_with_input "type" "--type" $type
+    | merge_with_input "summary" "--summary" $summary
+    | merge_with_input "product" "--product" $product
+    | merge_with_input "component" "--component" $component
+    | merge_with_input "version" "--version" $version
 
   rest-api post-json "bug" $input "bug creation"
 }

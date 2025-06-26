@@ -22,12 +22,15 @@ export def "begin-revendor cts" [
 		use $BUGZILLA
 
 		let assigned_to = $assigned_to | default { bugzilla whoami | get name }
-		bug create {
-			summary: $"Update WebGPU CTS to upstream \(week of (monday-of-this-week)\)"
-			assigned_to: $assigned_to
-			blocks: 1863146 # `webgpu-update-cts`
-			priority: P1
-		} | get id
+		(
+			bug create
+				--summary $"Update WebGPU CTS to upstream \(week of (monday-of-this-week)\)"
+				--extra {
+					assigned_to: $assigned_to
+					blocks: 1863146 # `webgpu-update-cts`
+					priority: P1
+				}
+		) | get id
 	}
 
 	let moz_yaml_path = 'dom/webgpu/tests/cts/moz.yaml'
@@ -127,12 +130,15 @@ export def "begin-revendor wgpu" [
 			log error $"failed to fetch bugs depending on ($bug_id_webgpu_update_wgpu), bailing"
 		}
 
-		bug create {
-			summary: $"Update WGPU to upstream \(week of (monday-of-this-week)\)"
-			assigned_to: $assigned_to
-			blocks: ($update_dependents | append $bug_id_webgpu_update_wgpu)
-			priority: P1
-		} | get id
+		(
+			bug create
+				--summary $"Update WGPU to upstream \(week of (monday-of-this-week)\)"
+				--extra {
+					assigned_to: $assigned_to
+					blocks: ($update_dependents | append $bug_id_webgpu_update_wgpu)
+					priority: P1
+				}
+		) | get id
 	}
 
 	try {
@@ -175,17 +181,24 @@ def monday-of-this-week [] {
 
 export def "bug create" [
 	--assign-to-me,
-	input: record<summary: string>,
+	--summary: string,
+	--type: string = "task",
+	--version: string = "unspecified",
+	--extra: record = {},
 ] {
 	const BUGZILLA = path self "../bugzilla.nu"
 	use $BUGZILLA
 
-	bugzilla bug create --assign-to-me=$assign_to_me ({
-		product: 'Core'
-		component: 'Graphics: WebGPU'
-		version: 'unspecified'
-		type: 'task'
-	} | merge $input)
+	(
+		bugzilla bug create
+			--assign-to-me=$assign_to_me
+			--product 'Core'
+			--component 'Graphics: WebGPU'
+			--summary=$summary
+			--type=$type
+			--version=$version
+			--extra=$extra
+	)
 }
 
 def quote-args-for-debugging []: list<string> -> string {
