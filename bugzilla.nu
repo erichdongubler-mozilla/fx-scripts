@@ -87,7 +87,7 @@ def "rest-api post-json" [
   use std/log [] # set up `log` cmd. state
 
   let full_url = $"($HOST)/rest/($url_path)"
-  log debug $"`POSTING`ting ($full_url | to nuon)"
+  log debug $"`POST`ing to ($full_url | to nuon) with input ($input | to nuon)"
 
   let headers = auth-headers from-api-key --required-for $what
     | merge $USER_AGENT_HEADER
