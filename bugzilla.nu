@@ -51,7 +51,7 @@ def "auth-headers from-api-key" [
 
 def "rest-api get-json" [
   url_path: string,
-  --auth-required-for: string | null = null,
+  --auth-required-for: oneof<nothing, string> = null,
 ]: nothing -> any {
   use std/log [] # set up `log` cmd. state
 
