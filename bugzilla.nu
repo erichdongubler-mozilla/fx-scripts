@@ -115,7 +115,7 @@ def "rest-api put-json" [
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#create-bug>
 export def "bug create" [
   --assign-to-me,
-  --type: oneof<nothing, string> = null,
+  --type: oneof<nothing, string@"nu-complete bug type"> = null,
   --summary: oneof<nothing, string> = null,
   --product: oneof<nothing, string> = null,
   --component: oneof<nothing, string> = null,
@@ -219,6 +219,14 @@ export def "bugs apply-output-fmt" [
       }
     }
   }
+}
+
+def "nu-complete bug type" [] {
+  [
+    "defect"
+    "task"
+    "enhancement"
+  ]
 }
 
 def "parse-response get" [success_field_name: string]: any -> any {
