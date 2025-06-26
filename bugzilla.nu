@@ -288,6 +288,22 @@ def "nu-complete bugs output-fmt" [] {
   ]
 }
 
+export def "product get" [
+  ...ids_or_names: oneof<int, string>,
+]: nothing -> list<record<products: list<record>>> {
+  if ($ids_or_names | is-empty) {
+    error make --unspanned {
+      msg: "no ID(s) or name(s) specified"
+      label: {
+        span: (metadata $ids_or_names).span
+      }
+    }
+  }
+
+  rest-api get-json $'product($ids_or_names | ids-or-names)'
+    | parse-response get "products"
+}
+
 # Look up multiple bugs using the `quicksearch` field in the `Search Bugs` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#search-bugs>
 export def "quicksearch" [
