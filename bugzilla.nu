@@ -165,6 +165,23 @@ export def "bug create" [
   rest-api post-json "bug" $input "bug creation"
 }
 
+export def "bug field" [
+  id_or_name: oneof<int, string>,
+]: nothing -> record<name: string, id: int, type: int, display_name: string, values: list<record<name: string>>> {
+  let fields = rest-api get-json $'field/bug/($id_or_name)'
+    | parse-response get "fields"
+
+  match ($fields | length) {
+    0 => (error make --unspanned {
+      msg: "internal error: service returned an empty list of matching fields"
+    })
+    1 => ($fields | first )
+    $len => (error make --unspanned {
+      msg: $"internal error: service returned ($len) matching fields"
+    })
+  }
+}
+
 # Fetch a single bug via the `Bug Get` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#get-bug>
 export def "bug get" [
