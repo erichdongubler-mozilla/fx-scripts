@@ -142,7 +142,13 @@ export def "begin-revendor wgpu" [
 	}
 
 	for crate in $wgpu_crates_to_audit {
-		cargo vet certify $crate.name --criteria safe-to-deploy --accept-all $'($crate.version)@git:($old_revision)' $'($crate.version)@git:($new_revision)'
+		let old_dep = $'($crate.version)@git:($old_revision)'
+		let new_dep = $'($crate.version)@git:($new_revision)'
+		(
+			cargo vet certify $crate.name
+				--criteria safe-to-deploy
+				--accept-all $old_dep $new_dep
+		)
 	}
 
 	print "You are now ready to run `mach vendor rust`!"
@@ -189,7 +195,12 @@ export def "ci dl-reports" [
 ] {
 	use std/log [] # set up `log` cmd. state
 
-	let args = [--job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/test_info/wptreport.json' --out-dir $in_dir ...$revisions]
+	let args = [
+		--job-type-re ".*web-platform-tests-webgpu.*"
+		--artifact 'public/test_info/wptreport.json'
+		--out-dir $in_dir
+		...$revisions
+	]
 	log info $"Downloading reports via `treeherder-dl ($args | quote-args-for-debugging)`…"
 	treeherder-dl ...$args
 }
@@ -200,7 +211,13 @@ export def "ci dl-logs" [
 ] {
 	use std/log [] # set up `log` cmd. state
 
-	let args = [--job-type-re ".*web-platform-tests-webgpu.*" --artifact 'public/logs/live_backing.log' --out-dir $in_dir ...$revisions]
+	let args = [
+		--job-type-re
+		".*web-platform-tests-webgpu.*"
+		--artifact 'public/logs/live_backing.log'
+		--out-dir $in_dir
+		...$revisions
+	]
 	log info $"Downloading logs via `treeherder-dl ($args | quote-args-for-debugging)`…"
 	treeherder-dl ...$args
 }
@@ -217,17 +234,24 @@ export def "ci meta path-and-line" [
 	let parsed = $cts_test_path | parse 'webgpu:{test_group}:{rest}' | first
 	let test_group_path_segments = $parsed.test_group | str replace --all ',' '/'
 
-	let test_file_path = $'testing/web-platform/mozilla/meta/webgpu/cts/webgpu/($test_group_path_segments)/cts.https.html.ini'
+	let test_file_path = (
+		$'testing/web-platform/mozilla/meta/webgpu/cts/webgpu/($test_group_path_segments)/cts.https.html.ini'
+	)
 	log debug $'test_file_path: ($test_file_path | to nuon)'
 	if $parsed.rest == '*' {
 		echo $test_file_path
 	} else {
 		let parsed = $parsed | merge ($parsed.rest | parse '{test_name}:{rest}' | first)
 
-		let rg_search_term = $'^\[cts.https.html\?.*?q=webgpu:($parsed.test_group):($parsed.test_name):\*\]$'
+		let rg_search_term = (
+			$'^\[cts.https.html\?.*?q=webgpu:($parsed.test_group):($parsed.test_name):\*\]$'
+		)
 		log debug $'rg_search_term: ($rg_search_term | to nuon)'
 
-		let matching_line_nums = rg --line-number $rg_search_term $test_file_path | parse '{line_num}:{junk}' | get line_num
+		let matching_line_nums = rg --line-number $rg_search_term $test_file_path
+			| parse '{line_num}:{junk}'
+			| get line_num
+
 		let file_edit_args = $matching_line_nums | each { $'($test_file_path):($in)' }
 
 		if ($matching_line_nums | length) != 1 {
@@ -279,7 +303,13 @@ def "ci process-reports" [
 	let revision_glob_opts = $revisions | reduce --fold [] {|rev, acc|
 		$acc | append [
 			"--glob"
-			($rev | parse '{_repo}:{hash}' | first | (ci wptreport-glob $"($in_dir)/($in.hash)/") | into string)
+			(
+				$rev
+					| parse '{_repo}:{hash}'
+					| first
+					| (ci wptreport-glob $"($in_dir)/($in.hash)/")
+					| into string
+			)
 		]
 	}
 
@@ -313,7 +343,13 @@ export def --wrapped "ci update-expected" [
 
 	$args = $args | append ($implementation_status | each { ["--implementation-status" $in] } | flatten)
 
-	ci process-reports update-expected --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions --dl $dl ...$args
+	(
+		ci process-reports update-expected
+			--remove-old=$remove_old
+			--in-dir=$in_dir
+			--revisions=$revisions
+			--dl $dl ...$args
+	)
 }
 
 export def "ci migrate" [
@@ -321,7 +357,12 @@ export def "ci migrate" [
 	--in-dir: directory = "../wpt/",
 	...revisions: string,
 ] {
-	ci process-reports migrate --remove-old=$remove_old --in-dir=$in_dir --revisions=$revisions
+	(
+		ci process-reports migrate
+			--remove-old=$remove_old
+			--in-dir=$in_dir
+			--revisions=$revisions
+	)
 }
 
 def "ci process-reports preset" [] {
