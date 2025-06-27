@@ -120,7 +120,7 @@ export def "bug create" [
   --description: oneof<nothing, string> = null,
   --product: oneof<nothing, string> = null,
   --component: oneof<nothing, string> = null,
-  --priority: oneof<nothing, string> = null,
+  --priority: oneof<nothing, string@"nu-complete bug field priority"> = null,
   --severity: oneof<nothing, string> = null,
   --version: string = "unspecified",
   --extra: record = {},
@@ -180,6 +180,11 @@ export def "bug field" [
       msg: $"internal error: service returned ($len) matching fields"
     })
   }
+}
+
+def "bug field-values to-completions" [
+]: record<values: list<record<name: string>>> -> list<string> {
+  get values | get name
 }
 
 # Fetch a single bug via the `Bug Get` API:
@@ -281,6 +286,10 @@ def "ids-or-names" []: list<oneof<int, string>> -> record<ids: list<int>, names:
         | $"?($in | url build-query)"
     }
   }
+}
+
+def "nu-complete bug field priority" [] {
+  bug field 'priority' | bug field-values to-completions
 }
 
 def "nu-complete product list output-fmt" [] {
