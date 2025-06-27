@@ -184,6 +184,7 @@ export def "bug create" [
 	--summary: string,
 	--type: string = "task",
 	--priority: oneof<nothing, string> = null,
+	--severity: oneof<nothing, string> = null,
 	--version: string = "unspecified",
 	--extra: record = {},
 ] {
@@ -198,6 +199,7 @@ export def "bug create" [
 			--summary=$summary
 			--type=$type
 			--priority=$priority
+			--severity=$severity
 			--version=$version
 			--extra=$extra
 	)
