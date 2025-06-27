@@ -183,6 +183,7 @@ export def "bug create" [
 	--assign-to-me,
 	--summary: string,
 	--type: string = "task",
+	--priority: oneof<nothing, string> = null,
 	--version: string = "unspecified",
 	--extra: record = {},
 ] {
@@ -196,6 +197,7 @@ export def "bug create" [
 			--component 'Graphics: WebGPU'
 			--summary=$summary
 			--type=$type
+			--priority=$priority
 			--version=$version
 			--extra=$extra
 	)

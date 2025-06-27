@@ -120,6 +120,7 @@ export def "bug create" [
   --description: oneof<nothing, string> = null,
   --product: oneof<nothing, string> = null,
   --component: oneof<nothing, string> = null,
+  --priority: oneof<nothing, string> = null,
   --version: string = "unspecified",
   --extra: record = {},
 ] {
@@ -156,6 +157,7 @@ export def "bug create" [
     | merge_with_input "description" "--description" $description
     | merge_with_input "product" "--product" $product
     | merge_with_input "component" "--component" $component
+    | merge_with_input "priority" "--priority" $priority
     | merge_with_input "version" "--version" $version
 
   rest-api post-json "bug" $input "bug creation"
