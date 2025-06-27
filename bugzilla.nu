@@ -121,7 +121,7 @@ export def "bug create" [
   --product: oneof<nothing, string> = null,
   --component: oneof<nothing, string> = null,
   --priority: oneof<nothing, string@"nu-complete bug field priority"> = null,
-  --severity: oneof<nothing, string> = null,
+  --severity: oneof<nothing, string@"nu-complete bug field severity"> = null,
   --version: string = "unspecified",
   --extra: record = {},
 ] {
@@ -290,6 +290,10 @@ def "ids-or-names" []: list<oneof<int, string>> -> record<ids: list<int>, names:
 
 def "nu-complete bug field priority" [] {
   bug field 'priority' | bug field-values to-completions
+}
+
+def "nu-complete bug field severity" [] {
+  bug field 'bug_severity' | bug field-values to-completions
 }
 
 def "nu-complete product list output-fmt" [] {
