@@ -413,6 +413,7 @@ def "ci update-expected on-skip-only" [] {
 export def "ci search wpt by-test-message" [
 	term: string,
 	--in-dir: directory = "../wpt/",
+	--include-skipped = false,
 ] {
 	use std/log [] # set up `log` cmd. state
 
@@ -438,6 +439,7 @@ export def "ci search wpt by-test-message" [
 export def "ci search wpt by-test-name" [
 	term: string,
 	--in-dir: directory = "../wpt/",
+	--include-skipped = false,
 ] {
 	use std/log [] # set up `log` cmd. state
 
@@ -459,8 +461,11 @@ export def "ci search wpt by-test-name" [
 		| ci search wpt clean-search-results $in_dir
 }
 
-def "ci search wpt clean-search-results" [in_dir: string] {
-	flatten
+def "ci search wpt clean-search-results" [
+  in_dir: string,
+  --include-skipped = false,
+] {
+	let pre_filtered = flatten
 		| update file {
 			$in
 				| str replace ($in_dir | path expand) ''
@@ -488,4 +493,10 @@ def "ci search wpt clean-search-results" [in_dir: string] {
 				| update duration { into duration --unit ms }
 				| move status --before subtests
 		}
+
+	if $include_skipped {
+		$pre_filtered
+	} else {
+		$pre_filtered | where status != 'SKIP'
+	}
 }
