@@ -248,7 +248,7 @@ export def "ci device-init-fail-regex" []: nothing -> string {
 
 export def "ci meta path-and-line" [
 	cts_test_path: string,
-]: nothing -> nothing {
+]: nothing -> string {
 	use std/log [] # set up `log` cmd. state
 
 	let parsed = $cts_test_path | parse 'webgpu:{test_group}:{rest}' | first
