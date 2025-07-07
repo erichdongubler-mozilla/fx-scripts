@@ -110,6 +110,8 @@ export def "begin-revendor wgpu" [
 			}
 		}
 
+		log info $"new revision: ($new_revision)"
+
 		$new_revision
 	}
 
