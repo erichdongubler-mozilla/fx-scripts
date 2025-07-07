@@ -137,7 +137,7 @@ export def "begin-revendor wgpu" [
 			}
 		}
 
-		(
+		let new_bug_id = (
 			bug create
 				--summary $"Update WGPU to upstream \(week of (monday-of-this-week)\)"
 				--extra {
@@ -146,6 +146,19 @@ export def "begin-revendor wgpu" [
 					priority: P1
 				}
 		) | get id
+		try {
+			bugzilla bug update $bug_id_webgpu_update_wgpu {
+				blocks: { remove: $update_dependents }
+			}
+		} catch {
+			log warning ([
+				"failed to remove dependents from `webgpu-update-wgpu`; "
+				"please visit this URL and remove them: "
+				"https://bugzilla.mozilla.org/show_bug.cgi?id=webgpu-update-wgpu"
+			] | str join)
+		}
+
+		$new_bug_id
 	}
 
 	try {
