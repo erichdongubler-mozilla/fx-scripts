@@ -109,6 +109,8 @@ export def "begin-revendor wgpu" [
 				}
 			}
 		}
+
+		$new_revision
 	}
 
 	let wgpu_crates_to_audit = cargo metadata --format-version 1
