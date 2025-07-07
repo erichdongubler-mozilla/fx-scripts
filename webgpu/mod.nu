@@ -148,6 +148,9 @@ export def "begin-revendor wgpu" [
 					priority: P1
 				}
 		) | get id
+
+		log info $"filed bug ($new_bug_id)"
+
 		try {
 			bugzilla bug update $bug_id_webgpu_update_wgpu {
 				blocks: { remove: $update_dependents }
