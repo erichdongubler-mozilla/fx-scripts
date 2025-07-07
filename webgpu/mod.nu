@@ -102,7 +102,10 @@ export def "begin-revendor wgpu" [
 			}
 			2 => {
 				error make --unspanned {
-					msg: "internal error: got more than one "
+					msg: ([
+						"internal error: got more than one line in `stdout` from "
+						$"`mach vendor --check-for-update ($moz_yaml_path)`"
+					] | str join)
 				}
 			}
 		}
