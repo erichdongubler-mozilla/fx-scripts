@@ -149,7 +149,9 @@ export def "begin-revendor wgpu" [
 	try {
 		^$mach_cmd vendor $moz_yaml_path --revision $new_revision
 	} catch {
-		log error $"failed to revendor from `($moz_yaml_path)`"
+		error make --unspanned {
+			msg: $"failed to revendor from `($moz_yaml_path)`"
+		}
 	}
 
 	for crate in $wgpu_crates_to_audit {
