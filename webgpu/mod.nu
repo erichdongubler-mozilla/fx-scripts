@@ -132,7 +132,9 @@ export def "begin-revendor wgpu" [
 		let update_dependents = try {
 			bugzilla bug get --output-fmt full $bug_id_webgpu_update_wgpu | get blocks
 		} catch {
-			log error $"failed to fetch bugs depending on ($bug_id_webgpu_update_wgpu), bailing"
+			error make --unspanned {
+				msg: $"failed to fetch bugs depending on ($bug_id_webgpu_update_wgpu), bailing"
+			}
 		}
 
 		(
