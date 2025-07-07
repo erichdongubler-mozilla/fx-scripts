@@ -217,7 +217,7 @@ export def "bug update" [
   id_or_alias: oneof<int, string>,
   input: any,
 ] {
-  rest-api put-json $'bug/($id_or_alias)' $input "bug update"
+  rest-api put-json $'bug/($id_or_alias)' $input "bug update" | get bugs
 }
 
 # Apply a filter to the raw data of a bug returned by `bugzilla bug get` and the like.
