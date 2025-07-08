@@ -1,6 +1,12 @@
 use std/log
 
-alias moz-webgpu-cts = ~/workspace/mozilla/tools/moz-webgpu-cts/target/release/moz-webgpu-cts
+def moz-webgpu-cts --wrapped [...args] {
+   let bin_path = ls ~/workspace/mozilla/tools/moz-webgpu-cts/target/release/moz-webgpu-cts*
+      | where $it in ['moz-webgpu-cts' 'moz-webgpu-cts.exe']
+      | first
+      | get name
+   run-external $bin_path ...$args
+}
 
 export def "begin-revendor cts" [
 	--bug: oneof<nothing, int, string> = null,
