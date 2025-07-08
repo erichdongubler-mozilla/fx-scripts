@@ -42,7 +42,7 @@ export def "find-timed-out-tasks via-report" [
   # preceding `public`) is `0`, it is also omitted.
 ]: list<string> -> oneof<list<string>, string> {
   # NOTE: A present, but empty, `wptreport.json` indicates that `wptrunner` didn't successfully
-# write the report. We assume this is due to a task timeout, rather than some other cause.
+  # write the report. We assume this is due to a task timeout, rather than some other cause.
   rg --files --glob '**/wptreport.json' $dir
     | lines
     | ls ...$in
