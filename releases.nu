@@ -9,9 +9,9 @@ def "http-get-json" [
 }
 
 export def "list" [
-  ...segments: string,
+  path: string@"nu-complete get",
 ]: nothing -> record<prefixes: list<string> files: table<name: string size: filesize last_modified: datetime>> {
-  http-get-json $'firefox/($segments | each { $'($in)/' } | str join)' | update files {
+  http-get-json $path | update files {
     $in
       | update size { into filesize }
       | update last_modified { into datetime }
