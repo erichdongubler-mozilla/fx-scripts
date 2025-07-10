@@ -42,15 +42,7 @@ export def "bindings begin-revendor" [
     }
   }
 
-  let old_revision = $moz_yaml.origin.revision
-
-  let wgpu_crates_to_audit = cargo metadata --format-version 1
-    | from json
-    | get packages
-    | where {
-      $in.source != null and $in.source == $'git+($moz_yaml.vendoring.url)?rev=($old_revision)#($old_revision)'
-    }
-    | select name version
+  let wgpu_crates = $moz_yaml | crates-from-bindings-moz.yaml
 
   let new_revision = $revision | default {
     let new_revision = ^$mach_cmd vendor --check-for-update $moz_yaml_path
@@ -137,8 +129,8 @@ export def "bindings begin-revendor" [
     }
   }
 
-  for crate in $wgpu_crates_to_audit {
-    let old_dep = $'($crate.version)@git:($old_revision)'
+  for crate in $wgpu_crates.crates {
+    let old_dep = $'($crate.version)@git:($wgpu_crates.revision)'
     let new_dep = $'($crate.version)@git:($new_revision)'
     (
       cargo vet certify $crate.name
@@ -151,7 +143,27 @@ export def "bindings begin-revendor" [
 
   $"Bug ($bug_id) - build\(webgpu\): update WGPU to ($new_revision) r=#webgpu-reviewers!"
 }
+
 export def "bindings moz.yaml path" [] {
   'gfx/wgpu_bindings/moz.yaml'
 }
 
+export def "crates-from-bindings-moz.yaml" [
+]: record<vendoring: record<url: string> origin: record<revision: string>> -> record<revision: string crates: table<name: string version: string>>  {
+  let moz_yaml = $in
+
+  let revision = $moz_yaml.origin.revision
+
+  {
+    revision: $revision
+    crates: (
+      cargo metadata --format-version 1
+        | from json
+        | get packages
+        | where {
+          $in.source != null and $in.source == $'git+($moz_yaml.vendoring.url)?rev=($revision)#($revision)'
+        }
+        | select name version
+    )
+  }
+}
