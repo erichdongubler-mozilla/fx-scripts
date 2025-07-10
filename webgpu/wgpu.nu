@@ -44,6 +44,14 @@ export def "bindings begin-revendor" [
 
   let old_revision = $moz_yaml.origin.revision
 
+  let wgpu_crates_to_audit = cargo metadata --format-version 1
+    | from json
+    | get packages
+    | where {
+      $in.source != null and $in.source == $'git+($moz_yaml.vendoring.url)?rev=($old_revision)#($old_revision)'
+    }
+    | select name version
+
   let new_revision = $revision | default {
     let new_revision = ^$mach_cmd vendor --check-for-update $moz_yaml_path
 
@@ -77,14 +85,6 @@ export def "bindings begin-revendor" [
 
     $new_revision
   }
-
-  let wgpu_crates_to_audit = cargo metadata --format-version 1
-    | from json
-    | get packages
-    | where {
-      $in.source != null and $in.source == $'git+($moz_yaml.vendoring.url)?rev=($old_revision)#($old_revision)'
-    }
-    | select name version
 
   let bug_id = $bug | default {
     const BUGZILLA = path self "../bugzilla.nu"
