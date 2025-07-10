@@ -29,7 +29,7 @@ export def "bindings begin-revendor" [
     }
   }
 
-  let moz_yaml_path = 'gfx/wgpu_bindings/moz.yaml'
+  let moz_yaml_path = bindings moz.yaml path
   let moz_yaml = open $moz_yaml_path
 
   if not (
@@ -151,3 +151,7 @@ export def "bindings begin-revendor" [
 
   $"Bug ($bug_id) - build\(webgpu\): update WGPU to ($new_revision) r=#webgpu-reviewers!"
 }
+export def "bindings moz.yaml path" [] {
+  'gfx/wgpu_bindings/moz.yaml'
+}
+
