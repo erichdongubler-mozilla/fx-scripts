@@ -17,3 +17,50 @@ export def "list" [
       | update last_modified { into datetime }
   }
 }
+
+export def "nu-complete get" [
+  context: string,
+  position: int,
+  # TODO: use this
+] {
+  let completing_partial = ($context | is-not-empty) and ($context == ($context | str trim --right))
+  let segments = $context | split words
+
+  let candidate_segments = if $completing_partial {
+    $segments | slice ..-2
+  } else {
+    $segments
+  }
+
+  let response = list ...$candidate_segments
+
+  let partial = if $completing_partial {
+    $segments | last
+  } else {
+    ''
+  }
+
+  mut candidates = $response.prefixes
+    | str replace --regex '/$' ''
+    | each {
+      {
+        value: $in
+        style: blue
+      }
+    }
+
+  if ($response.files | is-not-empty) {
+    $candidates = $candidates | append (
+        $response.files
+          | get name
+          | each {
+            {
+              value: $in
+              style: green
+            }
+          }
+      )
+  }
+
+  $candidates | where ($it.value | str starts-with $partial)
+}
