@@ -9,4 +9,5 @@ publish = false
 chumsky = "0.11.1"
 clap = { version = "4.5.49", features = ["derive"] }
 env_logger = "0.11.8"
+jiff = "0.2.15"
 petgraph = "0.8.3"
