@@ -44,9 +44,9 @@ export def "bootstrap lines-to-disable" [] {
 	]
 }
 
-export def "cargo-vet-check-output" [
+export def "mach-cargo-vet-check-output" [
 ]: nothing -> record<conclusion: string, failures: table<any>, suggest: record<suggestions: table<name: string, suggested_criteria: list<string>, suggested_diff: record<from: oneof<string, nothing>, to: string>>>> {
-	let output = cargo vet check --output-format json | complete
+	let output = mach --quiet cargo vet check --output-format json | complete
 	let exit_code = $output.exit_code
 
 	let output_json = $output.stdout | from json
@@ -94,12 +94,12 @@ export def "certify-automatically" [
     # The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
     # rendered commit message.
 ]: nothing -> oneof<string, nothing> {
-    cargo-vet-check-output | get suggest.suggestions | certify-from-cargo-vet-check-suggestions
+    mach-cargo-vet-check-output | get suggest.suggestions | certify-from-cargo-vet-check-suggestions
 }
 
 # Certify Rust crates a la `certify`, but en masse from `cargo vet check` `suggestions`.
 #
-# It is recommended that you use this with `fx cargo-vet-check-output` if you know what you're
+# It is recommended that you use this with `fx mach-cargo-vet-check-output` if you know what you're
 # doing, or use `certify-automatically` instead.
 export def "certify-from-cargo-vet-check-suggestions" [
 	--reviewers (-r): list<string> = [],
@@ -191,4 +191,291 @@ def "certify-generate-revision-msg" [
 	let reviewers = $reviewers | append "#supply-chain-reviewers"
 
 	$"Bug ($bug) - chore\(rust\): audit ($list_summary) r=($reviewers | str join ',')"
+}
+
+# NOTE: Modifies CWD, for convenience.
+export def --env "workspace create" [
+  --name: oneof<string, nothing> = null,
+  # The name of the workspace to create.
+  #
+  # If unspecified, it uses the first fallback that succeeds, tried in the following order:
+  #
+  # 1. If the `ZELLIJ_SESSION_NAME` environment variable is available, use it,  stripping
+  #    `<default-workspace-root-dir-name>-` from the start, if present.
+  --parent-dir: oneof<directory, nothing> = null,
+  # The directory in which the new workspace should be placed.
+  #
+  # If unspecified, the parent of root directory of the current repo is used.
+  --vcs: string@"nu-complete workspace create vcs" = "jj",
+  --sparse-type: string@"nu-complete workspace create sparse-type" = "full",
+  # Additional patterns for sparse checkout to use on top of `--sparse-type`. Only makes sense if
+  # `--sparse-type` is not `full` (the default).
+  --add-sparse-patterns: list<string> = [],
+  --no-change-cwd,
+  --or-use-existing,
+]: nothing -> nothing {
+  use std
+
+  let specified_parent_dir = $parent_dir
+
+  let name = $name
+    | default {
+      let env_var_name = 'ZELLIJ_SESSION_NAME'
+      let zellij_session_name = $env
+        | get --optional $env_var_name
+        | str replace --regex '^firefox-(.+)' '$1'
+      if $zellij_session_name == null {
+        std log debug $"tried to infer `--name` from `$env.($env_var_name)`, but it was undefined"
+      } else {
+        std log info $"inferred `--name` from `$env.($env_var_name)`: ($zellij_session_name)"
+      }
+      $zellij_session_name
+    }
+    | default {
+      error make --unspanned {
+        msg: "`--name` was not provided, and no fallbacks yielded a value"
+      }
+    }
+
+  match $vcs {
+    # # TODO: make this work
+    # "git" => {
+    #
+    # }
+    "jj" => {
+      let current_workspace = (
+        jj workspace list --template 'json({"name" => name, "root" => root}) ++ "\n"'
+          | from json --objects
+          | where name == $name
+          | first
+      )
+      if ($current_workspace != null) {
+        if $or_use_existing {
+          std log info ([
+            $"workspace `($current_workspace.name)` already exists at path: "
+            $current_workspace.root
+          ] | str join)
+          if not $no_change_cwd {
+            cd $current_workspace.root
+          }
+          return
+        } else {
+          # NOTE: This is fine; we'll get an error from `jj workspace create`
+        }
+      }
+
+      let parent_dir = $specified_parent_dir | default { jj workspace root | path dirname }
+      if $parent_dir == "" {
+        mut msg: oneof<string, nothing> = null
+        mut hints: oneof<list<string>, nothing> = null
+        mut span = null
+
+        if $specified_parent_dir == null {
+          $msg = "inferred `--parent-dir` value came up empty"
+          $hints = [
+            ([
+              "`--parent-dir` was unspecified, so this path was inferred: "
+              $parent_dir
+            ] | str join)
+            "you can probably resolve this by explicitly specifying `--parent-dir`"
+          ]
+        } else {
+          $msg = "`--parent-dir` cannot be an empty string"
+          $span = ($specified_parent_dir | metadata).span
+        }
+
+        error make {
+          msg: $msg
+          label: {
+            span: $span
+          }
+          help: ($hints | str join "\n\n")
+        }
+      }
+      std assert ($parent_dir != "") "internal error: no `$dir` specified"
+
+      # TODO: Use `path basename` of root instead of `firefox`?
+      let dir = [$parent_dir $'firefox-($name)'] | path join
+      let recognized_types = nu-complete workspace create sparse-type
+      let recognized_type_results = $recognized_types | where value == $sparse_type
+      let recognized_type = match ($recognized_type_results | length) {
+        0 => {
+          error make {
+            msg: $"unrecognized checkout type: ($sparse_type | to nuon)"
+            labels: [
+              {
+                text
+              }
+            ]
+          }
+        }
+        1 => {
+          $recognized_type_results | first --strict
+        }
+        n => {
+          error make {
+            msg: $"internal error: ($sparse_type | to nuon) matched multiple types"
+          }
+        }
+      }
+
+      mut args = []
+      if ($recognized_type.sparse_patterns == null) {
+        std log warning $"`($recognized_type.value)` checkout type has no sparse patterns, this will take a while…"
+      } else {
+        $args = $args | append ['--sparse-patterns' 'empty']
+      }
+
+      ^jj workspace add --name $name $dir ...$args
+      # NOTE: `jj workspace add` should have informed the user of the end of this step already.
+
+      cd $dir
+
+      if ($recognized_type.sparse_patterns != null) {
+        let patterns_args = $recognized_type.sparse_patterns
+          | append $add_sparse_patterns
+          | each --flatten { ['--add' $in] }
+        jj sparse set ...$patterns_args
+      } else if ($add_sparse_patterns | is-not-empty) {
+        std log warning "ignoring `--sparse-patterns`, since `--sparse-type` is `full`"
+      }
+
+      const WATCHMAN_CONFIG_PATH = 'tools/tryselect/watchman.json'
+      if (
+        (jj config get 'fsmonitor.backend') == "watchman"
+          and (jj file list $WATCHMAN_CONFIG_PATH) == $WATCHMAN_CONFIG_PATH
+      ) {
+        jj status | ignore --stdout # Start `jj`'s own `watchman` state.
+        if (which watchman | is-not-empty) {
+          jj file show $WATCHMAN_CONFIG_PATH | watchman --json-command
+        } else {
+          std log warning "`watchman` not found on current `PATH`; bailing on setting it up"
+        }
+      }
+
+      if $no_change_cwd {
+        cd -
+      }
+    }
+    _ => {
+      error make {
+        msg: $"unrecognized VCS: ($vcs | to nuon)"
+        labels: [
+          {
+            text: ""
+            span: (metadata $vcs).span
+          }
+        ]
+      }
+    }
+  }
+}
+
+def "nu-complete workspace create sparse-type" [] {
+  let mach_entry_points = [
+    "build/"
+    "mach"
+    "mach.cmd"
+    "mach.ps1"
+    "python/mach/"
+    "python/mozboot/"
+    "python/mozbuild/"
+    "python/mozversioncontrol/"
+    "python/sites/"
+    "third_party/python/"
+  ]
+
+  let mach_configure_files = [
+    ...$mach_entry_points
+    "configure.py"
+    "moz.configure"
+    "js/"
+  ]
+
+  let mach_vendor_files = [
+    ...$mach_entry_points
+    "testing/mozbase/"
+  ]
+
+  let mach_try_files = [
+    ...$mach_entry_points
+    "python/mozlint/"
+    "python/mozterm/"
+    "taskcluster/"
+  ]
+
+  [
+    {
+      value: "full"
+      description: "Full checkout (warning: heavy)"
+      sparse_patterns: null
+    }
+    {
+      value: "almost-empty"
+      description: "Almost empty checkout"
+      sparse_patterns: []
+    }
+    {
+      value: "webgpu-cts"
+      description: "WebGPU CTS triage"
+      sparse_patterns: [
+        # CTS-specific stuff
+        "dom/webgpu/tests/cts/"
+        "testing/web-platform/mozilla/meta/webgpu/"
+        "testing/web-platform/mozilla/tests/webgpu/"
+        "testing/web-platform/tests/tools/third_party/"
+
+        ...$mach_try_files
+        ...$mach_vendor_files
+      ]
+    }
+    {
+      # TODO: Validate that this works.
+      value: "cargo"
+      description: "Cargo lockfile inspection"
+      sparse_patterns: [
+        "**/Cargo.lock",
+        "**/Cargo.toml",
+      ]
+    }
+    {
+      # TODO: Validate that this works.
+      value: "angle"
+      description: "ANGLE revendoring"
+      sparse_patterns: ([
+        "gfx/angle/"
+        "third_party/angle/"
+
+        ...$mach_try_files
+        ...$mach_vendor_files
+      ])
+    }
+  ] | update sparse_patterns {
+    if $in == null {
+      $in
+    } else {
+      $in
+        | append [
+          '.arcconfig' # NOTE: Needed so that `moz-phab` actually works.
+          '.gitignore'
+          '.hgignore'
+        ]
+        | sort --natural
+        | uniq
+    }
+  }
+}
+
+def "nu-complete workspace create vcs" [] {
+  [
+    # # TODO: make this work
+    # {
+    #   value: "git"
+    #   description: "Git"
+    # }
+    {
+      value: "jj"
+      description: "Jujutsu"
+    }
+  ]
 }
