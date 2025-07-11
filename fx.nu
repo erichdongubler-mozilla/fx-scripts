@@ -44,16 +44,8 @@ export def "bootstrap lines-to-disable" [] {
 	]
 }
 
-# Certify Rust crates a la `certify`, but en masse from `cargo vet check --output-format json`.
-# Useful when prototyping, and you just want to get to `mach vendor rust` ASAP.
-export def "certify-from-cargo-vet-check" [
-	--reviewers (-r): list<string> = [],
-	# Reviewer(s) to set for a revision message. `#supply-chain-reviewers` is always appended to
-	# this list.
-	--bug: int | null = null,
-	# The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
-	# rendered commit message.
-]: nothing -> oneof<string, nothing> {
+export def "cargo-vet-check-output" [
+]: nothing -> record<conclusion: string, failures: table<any>, suggest: record<suggestions: table<name: string, suggested_criteria: list<string>, suggested_diff: record<from: oneof<string, nothing>, to: string>>>> {
 	let output = cargo vet check --output-format json | complete
 	let exit_code = $output.exit_code
 
@@ -85,7 +77,39 @@ export def "certify-from-cargo-vet-check" [
 		}
 	}
 
-	let suggestions = $output_json | get suggest.suggestions
+	$output_json
+}
+
+# Certify Rust crates a la `certify`, but en masse from `cargo vet check --output-format json`'s
+# `suggestions` (which are gathered for you).
+#
+# A convenience over `certify-from-cargo-vet-check-suggestions`.
+#
+# Useful when prototyping, and you just want to get to `mach vendor rust` ASAP.
+export def "certify-automatically" [
+    --reviewers (-r): list<string> = [],
+    # Reviewer(s) to set for a revision message. `#supply-chain-reviewers` is always appended to
+    # this list.
+    --bug: int | null = null,
+    # The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
+    # rendered commit message.
+]: nothing -> oneof<string, nothing> {
+    cargo-vet-check-output | get suggest.suggestions | certify-from-cargo-vet-check-suggestions
+}
+
+# Certify Rust crates a la `certify`, but en masse from `cargo vet check` `suggestions`.
+#
+# It is recommended that you use this with `fx cargo-vet-check-output` if you know what you're
+# doing, or use `certify-automatically` instead.
+export def "certify-from-cargo-vet-check-suggestions" [
+	--reviewers (-r): list<string> = [],
+	# Reviewer(s) to set for a revision message. `#supply-chain-reviewers` is always appended to
+	# this list.
+	--bug: int | null = null,
+	# The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
+	# rendered commit message.
+]: table<name: string, suggested_criteria: list<string>, suggested_diff: record<from: oneof<string, nothing>, to: string>> -> oneof<string, nothing> {
+	let suggestions = $in
 
 	if ($suggestions | is-empty) {
 		log warning "no suggestions to apply"
