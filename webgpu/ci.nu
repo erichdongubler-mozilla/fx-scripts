@@ -300,15 +300,16 @@ export def "search reports by-test-name" [
     | search reports clean-search-results $in_dir
 }
 
-def "search reports clean-search-results" [
+def "search clean-search-results" [
   in_dir: string,
-  --include-skipped = false,
-] {
+  --artifact_path: string,
+  --extra-per-item: closure,
+]: table<file: path, test: record<test: string>> -> table<file: path test: string, worker_type: oneof<string, nothing>> {
   let results = $in
 
-  let artifact_path_for_platform = $WPT_REPORT_ARTIFACT_PATH | path parse | path join
+  let artifact_path_for_platform = $artifact_path | path parse | path join
 
-  let pre_filtered = $results
+  $results
     | flatten
     | update file {
       $in
@@ -320,27 +321,145 @@ def "search reports clean-search-results" [
       let params = $'https://example.com($entry.test)'
         | url parse
         | get params
-        | transpose --header-row
-        | first
 
-      let test = $params | get q
-      let worker_type = try {
-        $params | get worker
-      } catch {
-        null
+      if $params == [] {
+        # This might happen if we're not running a CTS test in the standalone framework, like an IDL
+        # test, or a reftest.
+        $entry | insert worker_type null
+      } else {
+        let params = $params
+          | transpose --header-row
+          | first
+
+        let test = $params | get q
+        let worker_type = try {
+          $params | get worker
+        } catch {
+          null
+        }
+
+        $entry
+          | update test { $test }
+          | insert worker_type { $worker_type }
       }
-
-      $entry
-        | update test { $test }
-        | insert worker_type { $worker_type }
-        | move worker_type --after subsuite
-        | update duration { into duration --unit ms }
-        | move status --before subtests
+        | do $extra_per_item
     }
+}
+
+def "search reports clean-search-results" [
+  in_dir: string,
+  --include-skipped = false,
+] {
+  let pre_filtered = (
+    search clean-search-results
+      $in_dir
+      --artifact_path $WPT_REPORT_ARTIFACT_PATH
+      --extra-per-item {
+        move worker_type --after subsuite
+          | update duration { into duration --unit ms }
+          | move status --before subtests
+      }
+  )
 
   if $include_skipped {
     $pre_filtered
   } else {
     $pre_filtered | where status != 'SKIP'
   }
+}
+
+export def "search timings by-test-name" [
+  term: string,
+  --in-dir: directory = "../wpt/",
+  --include-skipped = false,
+] {
+  const WPT = path self ../wpt.nu
+  use $WPT
+
+  use std/log [] # set up `log` cmd. state
+
+  let files = (
+    ls (artifact-glob $in_dir $'**/($WPT_INSTRUMENTS_ARTIFACT_PATH)')
+      | where type == file
+  ) | get name | sort
+
+  $files
+    | par-each --keep-order {|file|
+      open --raw $file
+        | try {
+          wpt parse-wpt_instruments.txt
+        } catch {
+          error make {
+            msg: $"failed to parse file `($file)`"
+          }
+        }
+        | where fn_name == 'testrunner' and activity == 'test'
+        | select rest duration
+        | rename --column { rest: test }
+        | update test { $"/($in)" }
+        | where test =~ $term
+        | each {
+          { file: $file test: $in }
+        }
+    }
+    | (
+      search clean-search-results
+        $in_dir
+        --artifact_path $WPT_INSTRUMENTS_ARTIFACT_PATH
+        --extra-per-item {|| }
+    )
+}
+
+def "shorten-runner-url-path" [] {
+  str replace --regex '^_mozilla/webgpu/cts/webgpu/.*\?(.*)' '?$1'
+}
+
+# Forwards `args` to `moz-webgpu-cts aggregate-timings-from-logs`, and transforms them into an
+# aggregate object that can be browsed in Nushell.
+export def "timings extract-from-log-files" --wrapped [
+  ...args,
+]: nothing -> table<> {
+  moz-webgpu-cts aggregate-timings-from-logs ...$args
+    | from json
+    | transpose
+    | rename path tests
+    | update tests {
+      transpose
+        | rename test_path duration_secs
+        | update duration_secs { into duration --unit sec }
+        | rename --column { duration_secs: duration }
+        | update test_path { shorten-runner-url-path }
+    }
+}
+
+# You can generate input for this script by using `webgpu ci timings extract-from-log-files`.
+export def "timings triage-long-tests" [
+]: table<path: path tests: table<test_path: string duration: duration>> -> any {
+  each {|entry|
+    $entry | update tests {
+      where {|test|
+        let threshold_of_concern = match [("backlog" in $entry.path) ("long" in $entry.path)] {
+          [false false] => 2min
+          [true false] => 3min
+          [_ true] => 8min
+        }
+
+        ("backlog" in $entry.path) and $test.duration > $threshold_of_concern
+      }
+    }
+  }
+  | where {not ($in | get tests | is-empty) }
+  | flatten
+  | group-by tests.test_path --to-table
+  | rename test_path
+  | update items { reject tests.test_path | flatten }
+  | sort-by test_path
+  | each {
+    [
+      $in.test_path
+      ...($in.items | each { $"\t($in.path): ($in.duration)" })
+    ]
+  }
+  | flatten
+  | str join "\n"
 }
