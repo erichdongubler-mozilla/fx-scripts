@@ -1,5 +1,8 @@
 use std/log
 
+const FX = path self "../fx.nu"
+use $FX
+
 const TIME = path self '../time.nu'
 use $TIME
 
@@ -13,6 +16,9 @@ export def "bindings begin-revendor" [
   --bug: oneof<nothing, int, string> = null,
   --revision: oneof<nothing, string> = null,
   --assigned-to: oneof<nothing, string> = null,
+  --vcs: oneof<nothing, string>@"nu-complete vcs" = "auto",
+  # The VCS to integrate with for automatic revision creation. Can be of `"auto"`, `"jj"`, or
+  # `null`.
 ] {
   use std/log [] # set up `log` cmd. state
 
@@ -158,19 +164,38 @@ export def "bindings begin-revendor" [
     | collect
     | save --raw --force $moz_yaml_path
 
-  for crate in $wgpu_crates.crates {
-    let old_dep = $'($crate.version)@git:($wgpu_crates.revision)'
-    let new_dep = $'($crate.version)@git:($new_revision)'
-    (
-      cargo vet certify $crate.name
-        --criteria safe-to-deploy
-        --accept-all $old_dep $new_dep
-    )
+  let vet_suggestions = (fx cargo-vet-check-output).suggest.suggestions
+    | tee { log info $"suggestion: ($in | to nuon --indent 2)"; log info $"wgpu_crates: ($wgpu_crates | to nuon --indent 2)"}
+    | partition-vet-suggestions --wgpu-crates $wgpu_crates
+
+  log info $"vet_suggestions: ($vet_suggestions | to nuon --indent 2)"
+
+  [...$vet_suggestions.wgpu_specific ...$vet_suggestions.others]
+    | fx certify-from-cargo-vet-check-suggestions
+
+  let change_title = $"WIP: Bug ($bug_id) - build\(webgpu\): update wgpu to ($new_revision) r=#webgpu-reviewers!"
+
+  let change_msg = if ($vet_suggestions.others | is-not-empty) {
+    [
+      $change_title
+      ''
+      'Transitive dependencies that needed vetting:'
+      ''
+      ...($vet_suggestions.others | each {
+        if $in.suggested_diff.from? == null {
+          $"- Added `($in.name)` $($in.suggested_diff.to)"
+        } else {
+          $"- Updated `($in.name)` $($in.suggested_diff.from) → $($in.suggested_diff.to)"
+        }
+      })
+    ] | str join "\n"
+  } else {
+    $change_title
   }
 
   print "You are now ready to run `mach vendor rust`!"
 
-  $"WIP: Bug ($bug_id) - build\(webgpu\): update wgpu to ($new_revision) r=#webgpu-reviewers!"
+  $change_msg
 }
 
 export def "bindings moz.yaml path" [] {
@@ -234,6 +259,53 @@ export def "bindings use-local-wgpu" [
   cargo update ...($crates | get name | each { ['--package' $in] } | flatten)
   print "You are now ready to run `mach vendor rust`!"
 }
+
+def "nu-complete vcs" [] {
+  [
+    {
+      value: "auto"
+      description: "Auto-detect VCS"
+    }
+    # # TODO: make this work
+    # {
+    #   value: "git"
+    #   description: "Git"
+    # }
+    {
+      value: "jj"
+      description: "Jujutsu"
+    }
+  ]
+}
+
+def "partition-vet-suggestions" [
+  --wgpu-crates: record<revision: string, crates: table<name: string, version: string>>,
+]: table<name: string, suggested_diff: record<from: string, to: string>> -> record<wgpu_specific: table<name: string, suggested_diff: record<from: string, to: string>>, others: table<name: string, suggested_diff: record<from: string, to: string>>> {
+  reduce --fold { wgpu_specific: [], others: [] } {|suggestion, acc|
+    if $suggestion.name in ($wgpu_crates.crates | get name) and '@git' in $suggestion.suggested_diff.to {
+      let old_version = $wgpu_crates.crates
+        | where name == $suggestion.name
+        | first --strict
+        | get version
+      $acc | update wgpu_specific {
+        append (
+          # NOTE: `suggested_diff.from` has only a crate version, which omits the old Git
+          # revision. This destroys and recreates the un-importable entry for wgpu crates, but
+          # that creates significant noise with the set of auditors in the entry. Reintroduce the
+          # Git revision so we preserve the set of existing auditors.
+          # NOTE: We use `old_version` here instead of `suggested_diff.from` because, if there is
+          # a newer version of a `wgpu` component here, it will suggest that instead of the
+          # version we were previously based on. I'm not sure why this bug happens yet.
+          $suggestion
+          | update suggested_diff.from { $'($old_version)@git:($wgpu_crates.revision)' }
+        )
+      }
+    } else {
+      $acc | update others { append $suggestion }
+    }
+  }
+}
+
 
 def "workspace-members" [
   --path: directory,
