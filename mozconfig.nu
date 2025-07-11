@@ -18,6 +18,8 @@ export def "generate" [
   # Hook a Python script into the handling of each `moz.build` file by setting
   # `MOZ_BUILD_HOOK=<path>`. Canonicalizes the provided path, and replaces backslashes with forward
   # slash.
+  --disable-sandbox,
+  --without-wasm-sandboxed-libraries,
 ]: nothing -> string {
   const SCRIPT_PATH = path self
 
@@ -37,6 +39,14 @@ export def "generate" [
 
   if $enable_clang_plugin {
     $options = $options | append 'ac_add_options --enable-clang-plugin'
+  }
+
+  if $disable_sandbox {
+    $options = $options | append 'ac_add_options --disable-sandbox'
+  }
+
+  if $without_wasm_sandboxed_libraries {
+    $options = $options | append 'ac_add_options --without-wasm-sandboxed-libraries'
   }
 
   if $as_milestone != "nightly" {
