@@ -118,8 +118,8 @@ export def "bug create" [
   --type: oneof<nothing, string>@"nu-complete bug type" = null,
   --summary: oneof<nothing, string> = null,
   --description: oneof<nothing, string> = null,
-  --product: oneof<nothing, string> = null,
-  --component: oneof<nothing, string> = null,
+  --product: oneof<nothing, string> = null@"nu-complete bug field product" = null,
+  --component: oneof<nothing, string> = null@"nu-complete bug field core-components" = null,
   --priority: oneof<nothing, string>@"nu-complete bug field priority" = null,
   --severity: oneof<nothing, string>@"nu-complete bug field severity" = null,
   --version: string = "unspecified",
@@ -187,6 +187,45 @@ export def "bug get" [
       }
     }
   }
+}
+
+export def "bug graph" [
+  id_or_alias: oneof<int, string>,
+  --output-fmt: string = "q",
+] {
+  let graph = rest-api put-json $'bug/($id_or_alias)/graph' {} "bug graph"
+
+  # TODO: Key next steps off of `$output_fmt`.
+
+  let links = $graph
+    | get blocked
+    | recurse
+    | skip 1 # skip the root
+    | get path
+    | each {
+      let path_segments = $in
+        | split cell-path
+        | get value
+      if ('bug' not-in $path_segments) and ($path_segments | length) >= 2 {
+        $path_segments | last 2 | { 'from': $in.0 'to': $in.1 }
+      }
+    }
+    | sort
+    | uniq
+
+  let nodes = $graph
+    | get blocked
+    | recurse
+    | skip 1 # skip the root
+    | each {|entry|
+      let path_segments = $entry.path | split cell-path | get value
+      if ($path_segments | length) > 1 and (($path_segments | last) == 'bug') {
+        $entry.item
+      }
+    }
+
+  # TODO: Render this as something more useful!
+  println "TODO, sucka!"
 }
 
 # Update a bug via the `Update Bug` API:
@@ -292,8 +331,25 @@ def "merge_with_input" [
   $input
 }
 
+def "nu-complete bug field core-components" [] {
+  http get 'https://bugzilla.mozilla.org/rest/product/Core'
+    | get products
+    | first
+    | get components
+    | where is_active
+    | get name
+}
+
 def "nu-complete bug field priority" [] {
   bug field 'priority' | bug field-values to-completions
+}
+
+def "nu-complete bug field product" [] {
+  let product_ids = http get 'https://bugzilla.mozilla.org/rest/product_enterable'
+  http get $'https://bugzilla.mozilla.org/rest/product?($product_ids | url build-query)'
+    | get products
+    | where is_active
+    | get name
 }
 
 def "nu-complete bug field severity" [] {

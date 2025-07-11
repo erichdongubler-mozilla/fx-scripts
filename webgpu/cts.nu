@@ -94,6 +94,9 @@ export def "commandeer-updatebot-bug" [
         | update status '-'
     )
   }
+
+  # print "Updating patch…"
+  # # TODO
 }
 
 def "gh current-mainline-commit" [
