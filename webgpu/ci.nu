@@ -367,3 +367,45 @@ def "search reports clean-search-results" [
     $pre_filtered | where status != 'SKIP'
   }
 }
+
+export def "search timings by-test-name" [
+  term: string,
+  --in-dir: directory = "../wpt/",
+  --include-skipped = false,
+] {
+  const WPT = path self ../wpt.nu
+  use $WPT
+
+  use std/log [] # set up `log` cmd. state
+
+  let files = (
+    ls (artifact-glob $in_dir $'**/($WPT_INSTRUMENTS_ARTIFACT_PATH)')
+      | where type == file
+  ) | get name | sort
+
+  $files
+    | par-each --keep-order {|file|
+      open --raw $file
+        | try {
+          wpt parse-wpt_instruments.txt
+        } catch {
+          error make {
+            msg: $"failed to parse file `($file)`"
+          }
+        }
+        | where fn_name == 'testrunner' and activity == 'test'
+        | select rest duration
+        | rename --column { rest: test }
+        | update test { $"/($in)" }
+        | where test =~ $term
+        | each {
+          { file: $file test: $in }
+        }
+    }
+    | (
+      search clean-search-results
+        $in_dir
+        --artifact_path $WPT_INSTRUMENTS_ARTIFACT_PATH
+        --extra-per-item {|| }
+    )
+}
