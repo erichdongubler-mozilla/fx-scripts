@@ -1,3 +1,5 @@
+export module ./moz.nu
+
 const repos_dir = path self './repos'
 
 export def "config copy" [
