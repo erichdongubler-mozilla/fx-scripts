@@ -409,6 +409,51 @@ def "search reports clean-search-results" [
   }
 }
 
+export def "search timings by-test-name" [
+  term: string,
+  --regex,
+  --in-dir: directory = "../wpt/",
+  --include-skipped = false,
+] {
+  const WPT = path self ../wpt.nu
+  use $WPT
+
+  use std/log [] # set up `log` cmd. state
+
+  let search_for_term = test-searcher --regex $term
+
+  let files = (
+    ls (artifact-glob $in_dir $'**/($WPT_INSTRUMENTS_ARTIFACT_PATH)')
+      | where type == file
+  ) | get name | sort
+
+  $files
+    | par-each --keep-order {|file|
+      open --raw $file
+        | try {
+          wpt parse-wpt_instruments.txt
+        } catch {
+          error make {
+            msg: $"failed to parse file `($file)`"
+          }
+        }
+        | where fn_name == 'testrunner' and activity == 'test'
+        | select rest duration
+        | rename --column { rest: test }
+        | update test { $"/($in)" }
+        | where { get test | do $search_for_term }
+        | each {
+          { file: $file test: $in }
+        }
+    }
+    | (
+      search clean-search-results
+        $in_dir
+        --artifact-path $WPT_INSTRUMENTS_ARTIFACT_PATH
+        --extra-per-item {|| }
+    )
+}
+
 def "test-searcher" [
   term: string,
   --regex,
