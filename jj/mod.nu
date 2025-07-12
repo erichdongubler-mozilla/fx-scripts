@@ -11,8 +11,26 @@ export def "config copy" [
     }
   }
   let config_path = jj config path --repo
-  cp $resolved ($config_path)
-  print $"Copied `($resolved)` to `($config_path)`"
+
+  try {
+    input "Press any key to view a diff with your current config…" --suppress-output
+    print
+  } catch {
+    return
+  }
+
+  try { delta $config_path $resolved }
+
+  try {
+    let prompt_input = input "Update your Jujutsu repo config? [y/N] "
+    match $prompt_input {
+      "y" | "Y" => {
+        cp $resolved ($config_path)
+        print $"Copied `($resolved)` to `($config_path)`"
+      }
+      _ => {}
+    }
+  } catch {}
 }
 
 def "nu-complete config copy repo" [] {
