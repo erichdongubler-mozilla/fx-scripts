@@ -12,6 +12,7 @@ core.fsmonitor = "watchman"
 "trunk()" = "main@upstream"
 "immutable_heads()" = '''
 builtin_immutable_heads()
+~ tags(glob:"pin/*")
 | remote_bookmarks(exact:'autoland')
 | trains()
 '''
