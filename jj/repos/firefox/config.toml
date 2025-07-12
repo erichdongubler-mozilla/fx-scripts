@@ -13,8 +13,10 @@ fsmonitor.backend = "watchman"
 [revset-aliases]
 "trunk()" = "main@upstream"
 
+# NOTE: Typical `builtin_immutable_heads()` is `trunk() | tags() | untracked_remote_branches()`, but
+# I want to exclude tags of the form `pin/*`. It's weird, I know, but it's what I want!
 "immutable_heads()" = '''
-builtin_immutable_heads()
+trunk() | tags(regex:"^[^p][^i][^n][^/]") | untracked_remote_bookmarks()
 | remote_bookmarks(exact:'autoland')
 | trains()
 '''
