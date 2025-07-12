@@ -10,6 +10,19 @@ fsmonitor.backend = "watchman"
 [aliases]
 "trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
 
+[fix.tools.mozlint]
+# NOTE: This requires CWD to be the workspace root, for now; see also
+# <https://github.com/jj-vcs/jj/issues/4866>.
+command = [
+  "uv",
+  "run",
+  "--no-project",
+  "--script",
+  "tools/lint/pipelint",
+  "$path",
+]
+patterns = ["glob:'**/*'"]
+
 [revset-aliases]
 "trunk()" = "main@upstream"
 
