@@ -1,10 +1,22 @@
+core.fsmonitor = "watchman"
+# core.watchman.register-snapshot-trigger = true
+
+[aliases]
+"trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
+
 [revset-aliases]
-"trunk()" = "bookmarks/central@unified"
+"trunk()" = "main@upstream"
 "immutable_heads()" = '''
 builtin_immutable_heads()
-| remote_bookmarks('bookmarks/aurora')
-| remote_bookmarks('bookmarks/autoland')
-| remote_bookmarks('bookmarks/beta')
-| remote_bookmarks('bookmarks/esr')
-| remote_bookmarks('bookmarks/release')
+| remote_bookmarks(exact:'autoland')
+| trains()
 '''
+"trains()" = '''
+trunk()
+| remote_bookmarks(exact:'beta')
+| remote_bookmarks(regex:'^esr\d+$')
+| remote_bookmarks(exact:'release')
+'''
+
+[git]
+fetch = ["origin", "upstream"]
