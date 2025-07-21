@@ -227,6 +227,27 @@ export def "bugs apply-output-fmt" [
   }
 }
 
+def "ids-or-names to-record" []: list<oneof<int, string>> -> record<ids: list<int>, names: list<string>> {
+  reduce --fold {} {|id_or_name, acc|
+    match ($id_or_name | describe) {
+      "int" => {
+        $acc | upsert ids { default [] | append $id_or_name }
+      }
+      "string" => {
+        $acc | upsert names { default [] | append $id_or_name }
+      }
+      $type => {
+        error make --unspanned {
+          msg: ([
+            $"internal error: unexpected type `($type)` "
+            "in element of `$ids_or_names`"
+          ] | str join)
+        }
+      }
+    }
+  }
+}
+
 def "ids-or-names to-url" []: list<oneof<int, string>> -> record<ids: list<int>, names: list<string>> {
   let ids_or_names = $in
 
@@ -241,27 +262,7 @@ def "ids-or-names to-url" []: list<oneof<int, string>> -> record<ids: list<int>,
       $"/($ids_or_names | first)"
     }
     _ => {
-      # NOTE: We checked that `--match` must not be populated above.
-      $ids_or_names
-        | reduce --fold {} {|id_or_name, acc|
-          match ($id_or_name | describe) {
-            "int" => {
-              $acc | upsert ids { default [] | append $id_or_name }
-            }
-            "string" => {
-              $acc | upsert names { default [] | append $id_or_name }
-            }
-            $type => {
-              error make --unspanned {
-                msg: ([
-                  $"internal error: unexpected type `($type)` "
-                  "in element of `$ids_or_names`"
-                ] | str join)
-              }
-            }
-          }
-        }
-        | $"?($in | url build-query)"
+      $ids_or_names | ids-or-names to-record | $"?($in | url build-query)"
     }
   }
 }
