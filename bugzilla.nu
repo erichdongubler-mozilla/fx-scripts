@@ -409,48 +409,78 @@ export def "search" [
     | bugs apply-output-fmt $output_fmt
 }
 
+# Fetch a single user via the `Get User` API:
+# <https://bmo.readthedocs.io/en/latest/api/core/v1/user.html#get-user>
 export def "user get" [
-  --match: oneof<nothing, string> = null,
-  ...ids_or_names: oneof<int, string>,
-]: nothing -> record<> {
-  if $match == null and ($ids_or_names | is-empty) {
-    error make --unspanned {
-      msg: "no ID(s), name(s), or `--match` string provided"
-    }
+  id_or_name: oneof<int, string>,
+  --auth,
+]: nothing -> record<id: int real_name: string nick: string name: string> {
+  let auth_required_for = if $auth {
+    "explicit request by user"
+  } else {
+    null
   }
 
-  if $match != null and ($ids_or_names | is-not-empty) {
-    error make {
-      msg: ([
-        "both `--match` and ID(s)/name(s) were specified"
-      ] | str join)
-      label: {
-        text: ""
-        span: (
-          [
-            (metadata $ids_or_names).span
-            (metadata $match).span
-          ] | {
-            start: ($in | get start | math min)
-            end: ($in | get end | math max)
-          }
-        )
-      }
-      help: "only one at a time is supported"
-    }
-  }
-
-  match ($ids_or_names | length) {
-    0 => {
-      # NOTE: We checked that `--match` must be populated above.
-      rest-api get-json $"user?match=($match)"
-    }
-    _ => {
-      # NOTE: We checked that `--match` must not be populated above.
-      rest-api get-json $'user($ids_or_names | ids-or-names)'
-    }
-  }
+  (
+    rest-api get-json
+      $'user([$id_or_name] | ids-or-names to-url)'
+      --auth-required-for $auth_required_for
+  )
     | parse-response get "users"
+    | match ($in | length) {
+      1 => ($in | first)
+      0 => (
+        error make --unspanned {
+          msg: "no such ID or name found"
+        }
+      )
+      _ => (
+        error make --unspanned {
+          msg: "internal error: multiple users found"
+        }
+      )
+    }
+}
+
+# Look up multiple users via the `Get User` API:
+# <https://bmo.readthedocs.io/en/latest/api/core/v1/user.html#get-user>
+export def "users search" [
+  ...ids_or_names: oneof<int, string>,
+  --match: list<string>,
+  --limit: int,
+  --group-ids: list<int>,
+  --groups: list<string>,
+  --include-disabled,
+  --auth,
+  --extra: record = {},
+]: nothing -> table<id: int real_name: string nick: string name: string> {
+  # TODO: handle `permissive` field
+
+  let ids_or_names = if ($ids_or_names | is-not-empty) {
+    $ids_or_names | ids-or-names to-record
+  } else {
+    null
+  }
+  let input = $extra
+    | merge_with_input "ids" "<ids_or_names>" ($ids_or_names.ids?)
+    | merge_with_input "names" "<ids_or_names>" ($ids_or_names.names?)
+    | merge_with_input "match" "--match" $match
+    | merge_with_input "limit" "--limit" $limit
+    | merge_with_input "group_ids" "--group-ids" $group_ids
+    | merge_with_input "groups" "--groups" $groups
+    | merge_with_input "include_disabled" "--include-disabled" $include_disabled
+
+  let auth_required_for = if $auth {
+    "explicit request by user"
+  } else {
+    null
+  }
+
+  (
+    rest-api get-json $"user?($input | url build-query)"
+      --auth-required-for $auth_required_for
+      | parse-response get "users"
+  )
 }
 
 export def "whoami" []: nothing -> record<id: int real_name: string nick: string name: string> {
