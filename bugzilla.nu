@@ -127,28 +127,6 @@ export def "bug create" [
 ] {
   use std/log [] # set up `log` cmd. state
 
-  def "merge_with_input" [
-    field_name: string,
-    option_name: string,
-    option_value: any,
-  ]: record -> record {
-    mut input = $in
-
-    if $option_value != null {
-      if $field_name in $input {
-        log warning ([
-          "conflicting assignment info. provided; "
-          $"both the option `($option_name)` and the `($field_name)` field "
-          $"in `extra` \(($input | get $field_name | to nuon)\) "
-          "were specified; resolving with the option's value"
-        ] | str join)
-      }
-      $input = $input | merge ({} | insert $field_name $option_value )
-    }
-
-    $input
-  }
-
   let input = $extra
     | merge_with_input "assigned_to" "--assign-to-me" (
       if $assign_to_me { (whoami | get name) } else { null }
@@ -286,6 +264,28 @@ def "ids-or-names" []: list<oneof<int, string>> -> record<ids: list<int>, names:
         | $"?($in | url build-query)"
     }
   }
+}
+
+def "merge_with_input" [
+  field_name: string,
+  option_name: string,
+  option_value: any,
+]: record -> record {
+  mut input = $in
+
+  if $option_value != null {
+    if $field_name in $input {
+      log warning ([
+        "conflicting assignment info. provided; "
+        $"both the option `($option_name)` and the `($field_name)` field "
+        $"in `extra` \(($input | get $field_name | to nuon)\) "
+        "were specified; resolving with the option's value"
+      ] | str join)
+    }
+    $input = $input | merge ({} | insert $field_name $option_value )
+  }
+
+  $input
 }
 
 def "nu-complete bug field priority" [] {
