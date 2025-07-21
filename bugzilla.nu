@@ -283,7 +283,7 @@ def "merge_with_input" [
         "were specified; resolving with the option's value"
       ] | str join)
     }
-    $input = $input | merge ({} | insert $field_name $option_value )
+    $input = $input | merge ({} | insert $field_name $option_value)
   }
 
   $input
