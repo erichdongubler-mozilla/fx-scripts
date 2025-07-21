@@ -227,13 +227,13 @@ export def "bugs apply-output-fmt" [
   }
 }
 
-def "ids-or-names" []: list<oneof<int, string>> -> record<ids: list<int>, names: list<string>> {
+def "ids-or-names to-url" []: list<oneof<int, string>> -> record<ids: list<int>, names: list<string>> {
   let ids_or_names = $in
 
   match ($ids_or_names | length) {
     0 => {
       error make {
-        msg: "internal error: empty list provided to `ids-or-names`"
+        msg: "internal error: empty list provided to `ids-or-names to-url`"
         span: (metadata $ids_or_names).span
       }
     }
@@ -349,7 +349,7 @@ export def "product get" [
     }
   }
 
-  rest-api get-json $'product($ids_or_names | ids-or-names)'
+  rest-api get-json $'product($ids_or_names | ids-or-names to-url)'
     | parse-response get "products"
 }
 
