@@ -6,7 +6,8 @@ use $TIME
 const WEBGPU_BUG = path self "../webgpu/bug.nu"
 use $WEBGPU_BUG
 
-const WGPU_REPO_URL = 'https://github.com/gfx-rs/wgpu'
+const WEBGPU_CONSTANTS = path self './constants.nu'
+use $WEBGPU_CONSTANTS WGPU_REPO_URL
 
 export def "bindings begin-revendor" [
   --bug: oneof<nothing, int, string> = null,
