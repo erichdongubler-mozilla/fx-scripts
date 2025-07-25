@@ -7,7 +7,7 @@ const WEBGPU_BUG = path self "../webgpu/bug.nu"
 use $WEBGPU_BUG
 
 const WEBGPU_CONSTANTS = path self './constants.nu'
-use $WEBGPU_CONSTANTS WGPU_REPO_URL
+use $WEBGPU_CONSTANTS [WGPU_REPO_PATH WGPU_REPO_URL]
 
 export def "bindings begin-revendor" [
   --bug: oneof<nothing, int, string> = null,
@@ -47,7 +47,11 @@ export def "bindings begin-revendor" [
 
   let wgpu_crates = $moz_yaml | crates-from-bindings-moz.yaml
 
-  let new_revision = $revision | default {
+  let new_revision = $revision | if $revision != null {
+    # Normalize the commit ref. to a full SHA-1 hash.
+    http get $'https://api.github.com/repos/($WGPU_REPO_PATH)/commits/($revision)'
+      | get sha
+  } else {
     let new_revision = ^$mach_cmd vendor --check-for-update $moz_yaml_path
 
     if $env.LAST_EXIT_CODE != 0 {
