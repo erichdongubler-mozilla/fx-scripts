@@ -40,7 +40,7 @@ export def "find-timed-out-tasks via-report" [
   # If downloaded using `treeherder-dl` and `tree` is specified, printed results have their leading
   # `$dir` and trailing `public/test_info/wptreport.json` trimmed. If the retry number (the segment
   # preceding `public`) is `0`, it is also omitted.
-]: list<string> -> oneof<list<string>, string> {
+]: nothing -> oneof<list<string>, string> {
   # NOTE: A present, but empty, `wptreport.json` indicates that `wptrunner` didn't successfully
   # write the report. We assume this is due to a task timeout, rather than some other cause.
   rg --files --glob '**/wptreport.json' $dir
