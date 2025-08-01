@@ -1,3 +1,66 @@
+const HOST = "https://bugzilla.mozilla.org"
+
+const USER_AGENT_HEADER = { "User-Agent": "ErichDonGubler-Socorro-Nushell/1.0" }
+
+export def "auth-headers from-auth-token" [
+  --required-for: oneof<string, nothing> = null,
+] {
+  use std/log
+
+  const env_var_name = 'SOCORRO_AUTH_TOKEN'
+  const config_path = $'($nu.home-dir)/.config/socorro.toml'
+  const toml_key = 'auth_token'
+
+  let sources = [
+    {
+      name: $"`($env_var_name)` environment variable"
+      extractor: { $env | get --optional $env_var_name }
+      fail_warning_msg: { $"no ($in) defined" }
+    }
+    {
+      name: $"`($toml_key)` field in `($config_path)`"
+      extractor: {
+        try {
+          open $config_path | get --optional $toml_key
+        } catch {
+          log debug $"unable to open path `($config_path)`"
+        }
+      }
+      fail_warning_msg: { $"failed to find ($in)" }
+    }
+  ]
+
+  $sources
+    | each {|source|
+      log debug $"attempting to get auth from ($source.name)…"
+      do $source.extractor
+        | each {
+          { 'Auth-Token': $in }
+        }
+        | default {
+          log debug ($source.name | do $source.fail_warning_msg $source.name)
+          null
+        }
+    }
+    | where $it != null
+    | first --strict
+    | default {
+      if $required_for == null {
+        {}
+      } else {
+        error make --unspanned {
+          msg: ([
+            "failed to get Socorro/crash stats auth. token from the following sources:"
+            ""
+            ...($sources | get name | each { $"- ($in)" })
+            ""
+            $"…and at least one is required for ($required_for)."
+          ] | str join "\n")
+        }
+      }
+    }
+}
+
 export def "api processed-crash" [
   crash_id: string,
 ] {
@@ -32,8 +95,16 @@ export def reports-from-bug [
 export def "_http get" [
   url_path: string,
   query_params: record,
+  --auth-required-for: oneof<string, nothing> = null,
 ] {
-  const USER_AGENT_HEADER = ["User-Agent" "ErichDonGubler-Socorro-Nushell/1.0"]
+  mut headers = { "User-Agent": "ErichDonGubler-Socorro-Nushell/1.0" }
+
+  if $auth_required_for != null {
+    $headers = $headers | merge (
+      auth-headers from-auth-token --required-for $auth_required_for
+    )
+  }
+
   let req_url = $'https://crash-stats.mozilla.org/api/($url_path)?($query_params | url build-query)'
-  http get --headers $USER_AGENT_HEADER $req_url
+  http get --headers $headers $req_url
 }
