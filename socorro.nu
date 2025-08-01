@@ -79,6 +79,16 @@ export def "api super-search" [
   _http get "SuperSearch/" $arguments
 }
 
+export def "api reprocess" [
+  --crash-ids: list<string>,
+] {
+  (
+    _http get "Reprocessing/"
+      --auth-required-for "reprocessing"
+      { crash_ids: $crash_ids }
+  )
+}
+
 export def reports-from-bug [
   bug_id: int,
 ] {
