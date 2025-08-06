@@ -2,8 +2,8 @@
 # <https://github.com/erichdongubler-mozilla/fx-scripts>. If you need to edit it,
 # consider sharing upstream!
 
-core.fsmonitor = "watchman"
-# core.watchman.register-snapshot-trigger = true
+fsmonitor.backend = "watchman"
+# fsmonitor.watchman.register-snapshot-trigger = true
 
 [aliases]
 "trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
