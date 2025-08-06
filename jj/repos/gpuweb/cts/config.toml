@@ -2,5 +2,7 @@
 # <https://github.com/erichdongubler-mozilla/fx-scripts>. If you need to edit it,
 # consider sharing upstream!
 
+"$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json"
+
 [revset-aliases]
 "immutable_heads()" = "builtin_immutable_heads() | fx-ci@origin | gh-pages@upstream"

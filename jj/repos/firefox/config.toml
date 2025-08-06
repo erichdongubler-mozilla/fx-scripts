@@ -2,6 +2,8 @@
 # <https://github.com/erichdongubler-mozilla/fx-scripts>. If you need to edit it,
 # consider sharing upstream!
 
+"$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json"
+
 fsmonitor.backend = "watchman"
 # fsmonitor.watchman.register-snapshot-trigger = true
 
