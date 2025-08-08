@@ -9,12 +9,16 @@ export def "generate" [
   # Enables debug symbols for compiled code.
   --enable-clang-plugin = true,
   # Enables `moz-clang-plugin` as a source of diagnostics for compiled code.
+  --with-ccache: oneof<string@"nu-complete generate with-ccache", nothing> = "sccache",
+  # Enables intermediate build artifact caching via the provided binary.
 ]: nothing -> string {
   const SCRIPT_PATH = path self
 
-  mut options = [
-    'ac_add_options --with-ccache=sccache'
-  ]
+  mut options = []
+
+  if $with_ccache != null {
+    $options = $options | append $'ac_add_options --with-ccache=($with_ccache)'
+  }
 
   if $enable_debug {
     $options = $options | append 'ac_add_options --enable-debug'
@@ -58,5 +62,11 @@ def "nu-complete generate optimize" [] {
     "enable"
     "disable-webgpu"
     "disable"
+  ]
+}
+
+def "nu-complete generate with-ccache" [] {
+  [
+    "sccache"
   ]
 }
