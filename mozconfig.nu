@@ -4,17 +4,26 @@
 # mozconfig`.
 export def "generate" [
   --as-milestone: string@"nu-complete generate as-milestone" | null = null,
-  --optimize: string@"nu-complete generate optimize" = "enable",
+  --optimize = true,
+  # Enable optimization of compiled code.
   --enable-debug = true,
   # Enables debug symbols for compiled code.
   --enable-clang-plugin = true,
   # Enables `moz-clang-plugin` as a source of diagnostics for compiled code.
   --with-ccache: oneof<string@"nu-complete generate with-ccache", nothing> = "sccache",
   # Enables intermediate build artifact caching via the provided binary.
+  --build-hook: oneof<path, nothing> = null,
+  # Hook a Python script into the handling of each `moz.build` file by setting
+  # `MOZ_BUILD_HOOK=<path>`. Canonicalizes the provided path, and replaces backslashes with forward
+  # slash.
 ]: nothing -> string {
   const SCRIPT_PATH = path self
 
   mut options = []
+
+  if not $optimize {
+    $options = $options | append 'ac_add_options --disable-optimize'
+  }
 
   if $with_ccache != null {
     $options = $options | append $'ac_add_options --with-ccache=($with_ccache)'
@@ -32,18 +41,11 @@ export def "generate" [
     $options = $options | append $'ac_add_options --as-milestone=($as_milestone)'
   }
 
-  match $optimize {
-    "disable" => {
-      $options = $options | append 'ac_add_options --disable-optimize'
-    }
-    "disable-webgpu" => {
-      let hook_script_path = $SCRIPT_PATH
-        | path dirname
-        | path join webgpu buildhook.py
+  if $build_hook != null {
+      let hook_script_path = $build_hook
+        | path expand
         | str replace '\' '/' --all # `mach build` doesn't handle native Windows hook script paths. >:(
       $options = $options | append $'ac_add_options MOZ_BUILD_HOOK=($hook_script_path)'
-    }
-    "enable" => {}
   }
 
   $options | append '' | str join "\n"
