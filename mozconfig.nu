@@ -5,14 +5,19 @@
 export def "generate" [
   --as-milestone: string@"nu-complete generate as-milestone" | null = null,
   --optimize: string@"nu-complete generate optimize" = "enable",
+  --enable-clang-plugin = true,
+  # Enables `moz-clang-plugin` as a source of diagnostics for compiled code.
 ]: nothing -> string {
   const SCRIPT_PATH = path self
 
   mut options = [
     'ac_add_options --with-ccache=sccache'
     'ac_add_options --enable-debug'
-    'ac_add_options --enable-clang-plugin'
   ]
+
+  if $enable_clang_plugin {
+    $options = $options | append 'ac_add_options --enable-clang-plugin'
+  }
 
   if $as_milestone != null {
     $options = $options | append $'ac_add_options --as-milestone=($as_milestone)'
