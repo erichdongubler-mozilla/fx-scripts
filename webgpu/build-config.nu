@@ -1,7 +1,7 @@
 const MOZCONFIG = path self '../mozconfig.nu'
 use $MOZCONFIG
 
-export def "generate" [] {
+export def "generate mozconfig" [] {
   const BUILD_HOOK = path self './buildhook.py'
 
   (

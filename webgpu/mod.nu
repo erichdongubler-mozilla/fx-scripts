@@ -1,9 +1,9 @@
 use std/log
 
+export module ./build-config.nu
 export module ./bug.nu
 export module ./ci.nu
 export module ./constants.nu
 export module ./cts.nu
 export module ./debug.nu
-export module ./mozconfig.nu
 export module ./wgpu.nu
