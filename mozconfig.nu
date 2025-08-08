@@ -4,6 +4,7 @@
 # mozconfig`.
 export def "generate" [
   --as-milestone: string@"nu-complete generate as-milestone" | null = null,
+  # Build as a specific release train. Defaults to Nightly.
   --optimize = true,
   # Enable optimization of compiled code.
   --enable-debug = true,
