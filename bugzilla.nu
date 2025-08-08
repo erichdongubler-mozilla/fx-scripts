@@ -70,10 +70,10 @@ def "rest-api get-json" [
   if ("error" in $response and $response.error) {
     error make {
       msg: $"error returned ($response.code): ($response.message)"
-      labels: [
+      label: {
         text: ""
         span: (metadata $url_path).span
-      ]
+      }
     }
   }
   $response
@@ -255,7 +255,10 @@ def "ids-or-names to-url" []: list<oneof<int, string>> -> record<ids: list<int>,
     0 => {
       error make {
         msg: "internal error: empty list provided to `ids-or-names to-url`"
-        span: (metadata $ids_or_names).span
+        label: {
+          text: ""
+          span: (metadata $ids_or_names).span
+        }
       }
     }
     1 => {
@@ -345,6 +348,7 @@ export def "product get" [
     error make --unspanned {
       msg: "no ID(s) or name(s) specified"
       label: {
+        text: ""
         span: (metadata $ids_or_names).span
       }
     }
@@ -371,6 +375,7 @@ export def "product list" [
       error make {
         msg: $"unrecognized output format `($output_fmt)`"
         label: {
+          text: ""
           span: (metadata $output_fmt).span
         }
       }

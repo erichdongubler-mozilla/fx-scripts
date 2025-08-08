@@ -7,7 +7,10 @@ export def "config copy" [
   if not ($resolved | path exists) {
     error make {
       msg: $"`($resolved)` does not exist"
-      span: (metadata $repo).span
+      label: {
+        text: ""
+        span: (metadata $repo).span
+      }
     }
   }
   let config_path = jj config path --repo
