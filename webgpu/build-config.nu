@@ -1,7 +1,7 @@
-const MOZCONFIG = path self '../mozconfig.nu'
-use $MOZCONFIG
-
 export def "generate mozconfig" [] {
+  const MOZCONFIG = path self '../mozconfig.nu'
+  use $MOZCONFIG
+
   const BUILD_HOOK = path self './buildhook.py'
 
   (
@@ -14,10 +14,10 @@ export def "generate mozconfig" [] {
   )
 }
 
-const WGPU = path self './wgpu.nu'
-use $WGPU
-
 export def "generate cargo-profile-overrides" [] {
+  const WGPU = path self './wgpu.nu'
+  use $WGPU
+
   let crates = open (wgpu bindings moz.yaml path) | wgpu crates-from-bindings-moz.yaml | get crates
 
   print "Add the following to `Cargo.toml`:"
