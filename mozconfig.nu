@@ -5,6 +5,8 @@
 export def "generate" [
   --as-milestone: string@"nu-complete generate as-milestone" | null = null,
   --optimize: string@"nu-complete generate optimize" = "enable",
+  --enable-debug = true,
+  # Enables debug symbols for compiled code.
   --enable-clang-plugin = true,
   # Enables `moz-clang-plugin` as a source of diagnostics for compiled code.
 ]: nothing -> string {
@@ -12,8 +14,11 @@ export def "generate" [
 
   mut options = [
     'ac_add_options --with-ccache=sccache'
-    'ac_add_options --enable-debug'
   ]
+
+  if $enable_debug {
+    $options = $options | append 'ac_add_options --enable-debug'
+  }
 
   if $enable_clang_plugin {
     $options = $options | append 'ac_add_options --enable-clang-plugin'
