@@ -3,8 +3,8 @@
 # Generally, you'll be writing this command's output into a file, i.e., `mozconfig generate o>
 # mozconfig`.
 export def "generate" [
-  --as-milestone: string@"nu-complete generate as-milestone" | null = null,
-  # Build as a specific release train. Defaults to Nightly.
+  --as-milestone: oneof<string@"nu-complete generate as-milestone"> = "nightly",
+  # Build as a specific release train. Specifying `nightly` emits no option, as it's the default.
   --optimize = true,
   # Enable optimization of compiled code.
   --enable-debug = true,
@@ -38,7 +38,17 @@ export def "generate" [
     $options = $options | append 'ac_add_options --enable-clang-plugin'
   }
 
-  if $as_milestone != null {
+  if $as_milestone != "nightly" {
+    let valid_values = nu-complete generate as-milestone
+    if $as_milestone not-in $valid_values {
+      error make {
+        msg: $"`--as-milestone` cannot be assigned `($as_milestone)`"
+        label: {
+          text: $"expected one of ($valid_values | each { to nuon })"
+          span: (metadata $as_milestone).span
+        }
+      }
+    }
     $options = $options | append $'ac_add_options --as-milestone=($as_milestone)'
   }
 
@@ -54,6 +64,7 @@ export def "generate" [
 
 def "nu-complete generate as-milestone" [] {
   [
+    "nightly"
     "release"
     "early-beta"
     "late-beta"
