@@ -202,6 +202,45 @@ export def "bug get" [
   }
 }
 
+export def "bug graph" [
+  id_or_alias: oneof<int, string>,
+  --output-fmt: string = "q",
+] {
+  let graph = rest-api put-json $'bug/($id_or_alias)/graph' {} "bug graph"
+
+  # TODO: Key next steps off of `$output_fmt`.
+
+  let links = $graph
+    | get blocked
+    | recurse
+    | skip 1 # skip the root
+    | get path
+    | each {
+      let path_segments = $in
+        | split cell-path
+        | get value
+      if ('bug' not-in $path_segments) and ($path_segments | length) >= 2 {
+        $path_segments | last 2 | { 'from': $in.0 'to': $in.1 }
+      }
+    }
+    | sort
+    | uniq
+
+  let nodes = $graph
+    | get blocked
+    | recurse
+    | skip 1 # skip the root
+    | each {|entry|
+      let path_segments = $entry.path | split cell-path | get value
+      if ($path_segments | length) > 1 and (($path_segments | last) == 'bug') {
+        $entry.item
+      }
+    }
+
+  # TODO: Render this as something more useful!
+  println "TODO, sucka!"
+}
+
 # Update a bug via the `Update Bug` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#rest-update-bug>
 export def "bug update" [
