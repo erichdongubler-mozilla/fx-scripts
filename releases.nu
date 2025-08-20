@@ -8,6 +8,26 @@ def "http-get-json" [
   )
 }
 
+export def "by-date" [
+  --limit: oneof<int, nothing> = null,
+] {
+  mut releases = uvx mozregression --list-releases
+    | lines
+    | skip 1
+    | sort --natural --reverse
+    | each { str trim }
+    | where { is-not-empty }
+    | parse '{release}: {date}'
+    | update release { into int }
+    | update date { into datetime }
+
+  if $limit != null {
+    $releases = $releases | take $limit
+  }
+
+  $releases
+}
+
 export def "list-ftp" [
   ...segments: string,
 ]: nothing -> record<prefixes: list<string> files: table<name: string size: filesize last_modified: datetime>> {
