@@ -8,7 +8,7 @@ def "http-get-json" [
   )
 }
 
-export def "list" [
+export def "list-ftp" [
   ...segments: string,
 ]: nothing -> record<prefixes: list<string> files: table<name: string size: filesize last_modified: datetime>> {
   http-get-json $'firefox/($segments | each { $'($in)/' } | str join)' | update files {
