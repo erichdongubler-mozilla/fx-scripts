@@ -28,7 +28,7 @@ export def "by-date" [
   $releases
 }
 
-export def "list-ftp" [
+export def "ftp list" [
   ...segments: string,
 ]: nothing -> record<prefixes: list<string> files: table<name: string size: filesize last_modified: datetime>> {
   http-get-json $'firefox/($segments | each { $'($in)/' } | str join)' | update files {
