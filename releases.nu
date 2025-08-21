@@ -38,6 +38,12 @@ export def "ftp list" [
   }
 }
 
+export def "ftp get" [
+  path: string@"nu-complete get",
+]: nothing -> any {
+  http get $'https://archive.mozilla.org/pub/($path)'
+}
+
 export def "nu-complete get" [
   context: string,
   position: int,
@@ -45,6 +51,7 @@ export def "nu-complete get" [
 ] {
   let context = $context
     | str replace --regex '^releases ftp list ' ''
+    | str replace --regex '^releases ftp get ' ''
   let segments = $context | split row '/'
   let completing_partial = $segments | last | is-not-empty
   let candidate_segments = $segments | slice ..-2
