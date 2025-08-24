@@ -208,6 +208,7 @@ export def "bindings use-local-wgpu" [
     | wrap $'($WGPU_REPO_URL).git'
     | wrap patch
     | to toml
+    | str replace --regex '^' "\n"
     | save --append Cargo.toml
 
   cargo update ...($crates | get name | each { ['--package' $in] } | flatten)
