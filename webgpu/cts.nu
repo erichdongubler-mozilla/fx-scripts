@@ -295,3 +295,25 @@ def "nu-complete updatebot bug cts" []: nothing -> list<int> {
     | where status != RESOLVED
     | get id
 }
+
+export def "regenerate-wpt" [] {
+  let current_revision = open dom/webgpu/tests/cts/moz.yaml | get origin.revision
+  try {
+    mach vendor 'dom/webgpu/tests/cts/moz.yaml' --force --revision $current_revision
+  }
+
+  let gitignores_deleted = jj status --config snapshot.max-new-file-size=106151400
+    | lines
+    | parse 'D {path}/.gitignore'
+    | get path
+    | each { $'($in)/.gitignore' }
+  if ($gitignores_deleted | is-not-empty) {
+    jj restore ...$gitignores_deleted
+  }
+
+  # Work around a bug with `mach vendor …` replacing line endings.
+  open --raw 'dom/webgpu/tests/cts/checkout/tools/gen_version'
+    | str replace --all (char crlf) (char lf)
+    | collect
+    | save --force dom/webgpu/tests/cts/checkout/tools/gen_version --raw
+}
