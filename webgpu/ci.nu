@@ -139,7 +139,7 @@ export def --wrapped "update-expected" [
   --preset: string@"process-reports preset",
   --on-skip-only: string@"update-expected on-skip-only",
   --in-dir: directory = "../wpt/",
-  --implementation-status: list<string@"process-reports implementation-status"> = [],
+  --implementation-status: list<string>@"process-reports implementation-status" = [],
   --dl = true,
   revisions: list<string>,
   ...args,

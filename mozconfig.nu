@@ -3,7 +3,7 @@
 # Generally, you'll be writing this command's output into a file, i.e., `mozconfig generate o>
 # mozconfig`.
 export def "generate" [
-  --as-milestone: oneof<string@"nu-complete generate as-milestone"> = "nightly",
+  --as-milestone: string@"nu-complete generate as-milestone" = "nightly",
   # Build as a specific release train. Specifying `nightly` emits no option, as it's the default.
   --optimize = true,
   # Enable optimization of compiled code.
@@ -11,7 +11,7 @@ export def "generate" [
   # Enables debug symbols for compiled code.
   --enable-clang-plugin = true,
   # Enables `moz-clang-plugin` as a source of diagnostics for compiled code.
-  --with-ccache: oneof<string@"nu-complete generate with-ccache", nothing> = "sccache",
+  --with-ccache: oneof<string, nothing>@"nu-complete generate with-ccache" = "sccache",
   # Enables intermediate build artifact caching via the provided binary.
   --build-hook: oneof<path, nothing> = null,
   # Hook a Python script into the handling of each `moz.build` file by setting
