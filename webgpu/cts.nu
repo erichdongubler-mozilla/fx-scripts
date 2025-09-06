@@ -57,6 +57,39 @@ export def "begin-revendor" [
   $"Bug ($bug_id) - test\(webgpu\): update CTS to ($revision) r=#webgpu-reviewers"
 }
 
+export def "commandeer-updatebot-bug" [
+  bug: int@"nu-complete updatebot bug cts",
+] {
+  let original_bug_state = bugzilla bug get $bug
+
+  if $WEBGPU_UPDATE_CTS_BUG_ID not-in $original_bug_state.blocks {
+    error make --unspanned {
+      msg: ([
+        "specified bug "
+        $bug
+        " does not block `webgpu-update-cts` (bug "
+        $WEBGPU_UPDATE_CTS_BUG_ID
+        "); "
+      ] | str join)
+      help: ([
+        "mark bug "
+        $bug
+        " as a blocker if you actually intended to commandeer it"
+      ] | str join)
+    }
+  }
+
+  print "Commandeering bug and updating classification…"
+  bugzilla bug update $bug {
+    assigned_to: (bugzilla whoami | get name)
+    type: task
+    priority: P1
+  }
+
+  print "Updating patch…"
+  # TODO
+}
+
 def "gh current-mainline-commit" [
   org: string,
   repo: string,
@@ -64,6 +97,12 @@ def "gh current-mainline-commit" [
   http get $'https://api.github.com/repos/($org)/($repo)/commits?({ per_page: 1 } | url build-query)'
     | get sha
     | first
+}
+
+def "nu-complete updatebot bug cts" []: nothing -> list<int> {
+  bugzilla search --criteria { blocked: $WEBGPU_UPDATE_CTS_BUG_ID }
+    | where status != RESOLVED
+    | get id
 }
 
 export def "regenerate-wpt" [] {
