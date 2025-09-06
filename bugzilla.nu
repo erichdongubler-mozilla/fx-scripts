@@ -115,13 +115,13 @@ def "rest-api put-json" [
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#create-bug>
 export def "bug create" [
   --assign-to-me,
-  --type: oneof<nothing, string@"nu-complete bug type"> = null,
+  --type: oneof<nothing, string>@"nu-complete bug type" = null,
   --summary: oneof<nothing, string> = null,
   --description: oneof<nothing, string> = null,
   --product: oneof<nothing, string> = null,
   --component: oneof<nothing, string> = null,
-  --priority: oneof<nothing, string@"nu-complete bug field priority"> = null,
-  --severity: oneof<nothing, string@"nu-complete bug field severity"> = null,
+  --priority: oneof<nothing, string>@"nu-complete bug field priority" = null,
+  --severity: oneof<nothing, string>@"nu-complete bug field severity" = null,
   --version: string = "unspecified",
   --extra: record = {},
 ] {
