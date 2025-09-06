@@ -9,6 +9,8 @@ use $TIME
 const WEBGPU_CONSTANTS = path self './constants.nu'
 use $WEBGPU_CONSTANTS [WGPU_REPO_PATH WGPU_REPO_URL]
 
+const WEBGPU_UPDATE_CTS_BUG_ID = 1863146 # `webgpu-update-cts`
+
 export def "begin-revendor" [
   --bug: oneof<nothing, int, string> = null,
   --revision: oneof<nothing, string> = null,
@@ -39,7 +41,7 @@ export def "begin-revendor" [
         --summary $"Update WebGPU CTS to upstream \(week of (time monday-of-this-week)\)"
         --extra {
           assigned_to: $assigned_to
-          blocks: 1863146 # `webgpu-update-cts`
+          blocks: $WEBGPU_UPDATE_CTS_BUG_ID
           priority: P1
         }
     ) | get id
