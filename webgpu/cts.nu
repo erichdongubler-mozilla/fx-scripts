@@ -1,5 +1,8 @@
 use std/log
 
+const BUGZILLA = path self "../bugzilla.nu"
+use $BUGZILLA
+
 const TIME = path self '../time.nu'
 use $TIME
 
@@ -30,9 +33,6 @@ export def "begin-revendor" [
   }
 
   let bug_id = $bug | default {
-    const BUGZILLA = path self "../bugzilla.nu"
-    use $BUGZILLA
-
     let assigned_to = $assigned_to | default { bugzilla whoami | get name }
     (
       bug create
