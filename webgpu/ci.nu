@@ -356,19 +356,27 @@ def "search clean-search-results" [
       let params = $'https://example.com($entry.test)'
         | url parse
         | get params
-        | transpose --header-row
-        | first
 
-      let test = $params | get q
-      let worker_type = try {
-        $params | get worker
-      } catch {
-        null
+      if $params == [] {
+        # This might happen if we're not running a CTS test in the standalone framework, like an IDL
+        # test, or a reftest.
+        $entry | insert worker_type null
+      } else {
+        let params = $params
+          | transpose --header-row
+          | first
+
+        let test = $params | get q
+        let worker_type = try {
+          $params | get worker
+        } catch {
+          null
+        }
+
+        $entry
+          | update test { $test }
+          | insert worker_type { $worker_type }
       }
-
-      $entry
-        | update test { $test }
-        | insert worker_type { $worker_type }
         | do $extra_per_item
     }
 }
