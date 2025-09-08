@@ -59,6 +59,19 @@ export def "dl-logs" [
   )
 }
 
+export def "dl-timings" [
+  --in-dir: directory = "../wpt/",
+  ...revisions: string,
+] {
+  (
+    dl
+      --what "timings logs"
+      --artifact $WPT_INSTRUMENTS_ARTIFACT_PATH
+      --in-dir $in_dir
+      ...$revisions
+  )
+}
+
 export def "device-init-fail-regex" []: nothing -> string {
   'WebGPU device failed to initialize'
 }
