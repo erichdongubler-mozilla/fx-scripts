@@ -334,7 +334,7 @@ def "search clean-search-results" [
   in_dir: string,
   --artifact-path: string,
   --extra-per-item: closure,
-] {
+]: table<file: path, test: record<test: string>> -> table<file: path test: string, worker_type: oneof<string, nothing>> {
   let results = $in
 
   let sanitize_windows_paths = { str replace '\' '/' --all }
