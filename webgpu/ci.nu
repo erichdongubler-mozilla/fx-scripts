@@ -88,7 +88,7 @@ export def "meta path-and-line" [
 
 def "wptreport-glob" [in_dir: path] {
   $in_dir
-    | path join "**/wptreport.json"
+    | path join $"**/($WPT_REPORT_ARTIFACT_PATH)"
     | str replace --all '\' '/' | into glob
 }
 
