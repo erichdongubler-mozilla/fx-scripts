@@ -262,11 +262,16 @@ def "search wpt clean-search-results" [
   in_dir: string,
   --include-skipped = false,
 ] {
-  let pre_filtered = flatten
+  let results = $in
+
+  let artifact_path_for_platform = $WPT_REPORT_ARTIFACT_PATH | path parse | path join
+
+  let pre_filtered = $results
+    | flatten
     | update file {
       $in
         | str replace ($in_dir | path expand) ''
-        | str replace ([public test_info wptreport.json] | path join) ''
+        | str replace $artifact_path_for_platform ''
     }
     | flatten
     | each {|entry|
