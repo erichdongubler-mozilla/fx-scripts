@@ -1,5 +1,7 @@
 use std/log
 
+const WPT_REPORT_ARTIFACT_PATH = 'public/test_info/wptreport.json'
+
 def quote-args-for-debugging []: list<string> -> string {
   each { $'"($in)"' } | str join ' '
 }
