@@ -330,9 +330,10 @@ export def "search reports by-test-name" [
     | search reports clean-search-results $in_dir
 }
 
-def "search reports clean-search-results" [
+def "search clean-search-results" [
   in_dir: string,
-  --include-skipped = false,
+  --artifact-path: string,
+  --extra-per-item: closure,
 ] {
   let results = $in
 
@@ -340,14 +341,14 @@ def "search reports clean-search-results" [
 
   let in_dir_absolute = $in_dir | path expand | do $sanitize_windows_paths
 
-  let pre_filtered = $results
+  $results
     | flatten
     | update file {
       $in
         | path expand
         | do $sanitize_windows_paths
         | str replace $in_dir_absolute ''
-        | str replace $WPT_REPORT_ARTIFACT_PATH ''
+        | str replace $artifact_path ''
         | str replace --regex '/0/$' '/'
     }
     | flatten
@@ -368,11 +369,25 @@ def "search reports clean-search-results" [
       $entry
         | update test { $test }
         | insert worker_type { $worker_type }
-        | move worker_type --after subsuite
-        | update duration { into duration --unit ms }
-        | move status --before subtests
-        | reject subsuite
+        | do $extra_per_item
     }
+}
+
+def "search reports clean-search-results" [
+  in_dir: string,
+  --include-skipped = false,
+] {
+  let pre_filtered = (
+    search clean-search-results
+      $in_dir
+      --artifact-path $WPT_REPORT_ARTIFACT_PATH
+      --extra-per-item {
+        move worker_type --after subsuite
+          | update duration { into duration --unit ms }
+          | move status --before subtests
+          | reject subsuite
+      }
+  )
 
   if $include_skipped {
     $pre_filtered
