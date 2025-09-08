@@ -225,7 +225,10 @@ export def "search wpt by-test-message" [
       open $file
         | get results
         | where {
-          ($in.message | do $predicate) or ($in.subtests | any { $in.message | do $predicate })
+          (
+            ($in.message | do $predicate)
+              or ($in.subtests | any { $in.message | do $predicate })
+          )
         }
         | each {
           { file: $file test: $in }
