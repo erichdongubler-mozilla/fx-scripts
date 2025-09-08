@@ -119,10 +119,14 @@ export def "meta path-and-line" [
   }
 }
 
-def "wptreport-glob" [in_dir: path] {
+def "artifact-glob" [in_dir: path, glob: string] {
   $in_dir
-    | path join $"**/($WPT_REPORT_ARTIFACT_PATH)"
+    | path join $glob
     | str replace --all '\' '/' | into glob
+}
+
+def "wptreport-glob" [in_dir: path] {
+  artifact-glob $in_dir $"**/($WPT_REPORT_ARTIFACT_PATH)"
 }
 
 def "process-reports" [
