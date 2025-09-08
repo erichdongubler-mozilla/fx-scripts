@@ -10,10 +10,14 @@ def quote-args-for-debugging []: list<string> -> string {
 export def "dl" [
   --in-dir: directory = "../wpt/",
   --what: string = "artifacts",
-  --artifact: string,
+  --artifact: oneof<string, nothing> = null,
   ...revisions: string,
 ] {
   use std/log [] # set up `log` cmd. state
+
+  if $artifact == null {
+    error make --unspanned { msg: "no `--artifact` specified" }
+  }
 
   if ($revisions | is-empty) {
     error make --unspanned { msg: "no revisions specified" }
