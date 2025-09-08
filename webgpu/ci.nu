@@ -126,7 +126,7 @@ def "artifact-glob" [in_dir: path, glob: string] {
 }
 
 def "wptreport-glob" [in_dir: path] {
-  artifact-glob $in_dir $"**/($WPT_REPORT_ARTIFACT_PATH)"
+  artifact-glob $in_dir $'**/($WPT_REPORT_ARTIFACT_PATH)'
 }
 
 def "process-reports" [
