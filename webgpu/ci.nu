@@ -7,37 +7,52 @@ def quote-args-for-debugging []: list<string> -> string {
   each { $'"($in)"' } | str join ' '
 }
 
-export def "dl-reports" [
+export def "dl" [
   --in-dir: directory = "../wpt/",
+  --what: string = "artifacts",
+  --artifact: string,
   ...revisions: string,
 ] {
   use std/log [] # set up `log` cmd. state
 
+  if ($revisions | is-empty) {
+    error make --unspanned { msg: "no revisions specified" }
+  }
+
   let args = [
     --job-type-re ".*web-platform-tests-webgpu.*"
-    --artifact 'public/test_info/wptreport.json'
+    --artifact $artifact
     --out-dir $in_dir
     ...$revisions
   ]
-  log info $"Downloading reports via `treeherder-dl ($args | quote-args-for-debugging)`…"
+  log info $"Downloading ($what) via `treeherder-dl ($args | quote-args-for-debugging)`…"
   treeherder-dl ...$args
+}
+
+export def "dl-reports" [
+  --in-dir: directory = "../wpt/",
+  ...revisions: string,
+] {
+  (
+    dl
+      --what "reports"
+      --artifact $WPT_REPORT_ARTIFACT_PATH
+      --in-dir $in_dir
+      ...$revisions
+  )
 }
 
 export def "dl-logs" [
   --in-dir: directory = "../wpt/",
   ...revisions: string,
 ] {
-  use std/log [] # set up `log` cmd. state
-
-  let args = [
-    --job-type-re
-    ".*web-platform-tests-webgpu.*"
-    --artifact 'public/logs/live_backing.log'
-    --out-dir $in_dir
-    ...$revisions
-  ]
-  log info $"Downloading logs via `treeherder-dl ($args | quote-args-for-debugging)`…"
-  treeherder-dl ...$args
+  (
+    dl
+      --what "logs"
+      --artifact 'public/logs/live_backing.log'
+      --in-dir $in_dir
+      ...$revisions
+  )
 }
 
 export def "device-init-fail-regex" []: nothing -> string {
