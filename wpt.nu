@@ -67,6 +67,40 @@ export def "find-timed-out-tasks via-log" [
     | find-timed-out-tasks report --dir $dir --artifact-path-re 'public/logs/live_backing\.log' --output $output
 }
 
+export def "parse-wpt_instruments.txt" [
+]: string -> table<thread_name: string fn_name: string activity: oneof<string, nothing> rest: oneof<string, nothing>, duration: duration> {
+  let lines = lines | enumerate | where { get item | str trim | is-not-empty }
+  let parse_line = {
+    parse --regex '^(?P<thread_name>.*?);(?P<fn_name>.*?)(?:;(?P<activity>.*?)(?:;(?P<rest>.*?))?)? (?P<duration>-?\d+)$'
+  }
+  let parsed_lines = $lines | get item | do $parse_line
+  if ($lines | length) != ($parsed_lines | length) {
+    let problem_line = $lines
+      | where {
+        (get item | do $parse_line) | is-empty
+      }
+      | first
+    error make --unspanned {
+      msg: $"failed to parse line ($problem_line.index):\n\n($problem_line.item)"
+    }
+  }
+
+  $parsed_lines
+    | each {
+      if $in.fn_name == 'testrunner' and $in.activity == 'test' {
+        update rest {
+          parse --regex '^(?P<path>.*?)(?P<query>\?.*)?$'
+            | first
+            | update path { split row ';' | str join '/' }
+            | $"($in.path)($in.query)"
+        }
+      } else {
+        $in
+      }
+    }
+    | update duration { into duration --unit ms }
+}
+
 def "nu-complete find-timed-out-tasks output" [] {
   [
     "tree"
