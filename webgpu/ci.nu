@@ -300,15 +300,16 @@ export def "search reports by-test-name" [
     | search reports clean-search-results $in_dir
 }
 
-def "search reports clean-search-results" [
+def "search clean-search-results" [
   in_dir: string,
-  --include-skipped = false,
+  --artifact_path: string,
+  --extra-per-item: closure,
 ] {
   let results = $in
 
-  let artifact_path_for_platform = $WPT_REPORT_ARTIFACT_PATH | path parse | path join
+  let artifact_path_for_platform = $artifact_path | path parse | path join
 
-  let pre_filtered = $results
+  $results
     | flatten
     | update file {
       $in
@@ -333,10 +334,24 @@ def "search reports clean-search-results" [
       $entry
         | update test { $test }
         | insert worker_type { $worker_type }
-        | move worker_type --after subsuite
-        | update duration { into duration --unit ms }
-        | move status --before subtests
+        | do $extra_per_item
     }
+}
+
+def "search reports clean-search-results" [
+  in_dir: string,
+  --include-skipped = false,
+] {
+  let pre_filtered = (
+    search clean-search-results
+      $in_dir
+      --artifact_path $WPT_REPORT_ARTIFACT_PATH
+      --extra-per-item {
+        move worker_type --after subsuite
+          | update duration { into duration --unit ms }
+          | move status --before subtests
+      }
+  )
 
   if $include_skipped {
     $pre_filtered
