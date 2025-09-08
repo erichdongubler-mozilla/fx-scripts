@@ -240,7 +240,7 @@ def "update-expected on-skip-only" [] {
   ]
 }
 
-export def "search wpt by-test-message" [
+export def "search reports by-test-message" [
   term: string,
   --in-dir: directory = "../wpt/",
   --include-skipped = false,
@@ -266,10 +266,10 @@ export def "search wpt by-test-message" [
           { file: $file test: $in }
         }
     }
-    | search wpt clean-search-results $in_dir
+    | search reports clean-search-results $in_dir
 }
 
-export def "search wpt by-test-name" [
+export def "search reports by-test-name" [
   term: string,
   --in-dir: directory = "../wpt/",
   --include-skipped = false,
@@ -291,10 +291,10 @@ export def "search wpt by-test-name" [
           { file: $file test: $in }
         }
     }
-    | search wpt clean-search-results $in_dir
+    | search reports clean-search-results $in_dir
 }
 
-def "search wpt clean-search-results" [
+def "search reports clean-search-results" [
   in_dir: string,
   --include-skipped = false,
 ] {
