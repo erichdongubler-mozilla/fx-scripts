@@ -280,7 +280,9 @@ export def "search reports by-test-name" [
 ] {
   use std/log [] # set up `log` cmd. state
 
-  let files = (ls (wptreport-glob $in_dir) | where type == file) | get name | sort
+  let files = (
+    ls (wptreport-glob $in_dir) | where type == file
+  ) | get name | sort
 
   $files
     | par-each --keep-order {|file|
