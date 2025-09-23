@@ -116,7 +116,7 @@ export def "bug create" [
   --type: oneof<nothing, string>@"nu-complete bug type" = null,
   --summary: oneof<nothing, string> = null,
   --description: oneof<nothing, string> = null,
-  --product: oneof<nothing, string> = null,
+  --product: oneof<nothing, string> = null@"nu-complete bug field product" = null,
   --component: oneof<nothing, string> = null@"nu-complete bug field core-components" = null,
   --priority: oneof<nothing, string>@"nu-complete bug field priority" = null,
   --severity: oneof<nothing, string>@"nu-complete bug field severity" = null,
@@ -316,6 +316,14 @@ def "nu-complete bug field core-components" [] {
 
 def "nu-complete bug field priority" [] {
   bug field 'priority' | bug field-values to-completions
+}
+
+def "nu-complete bug field product" [] {
+  let product_ids = http get 'https://bugzilla.mozilla.org/rest/product_enterable'
+  http get $'https://bugzilla.mozilla.org/rest/product?($product_ids | url build-query)'
+    | get products
+    | where is_active
+    | get name
 }
 
 def "nu-complete bug field severity" [] {
