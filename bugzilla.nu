@@ -117,7 +117,7 @@ export def "bug create" [
   --summary: oneof<nothing, string> = null,
   --description: oneof<nothing, string> = null,
   --product: oneof<nothing, string> = null,
-  --component: oneof<nothing, string> = null,
+  --component: oneof<nothing, string>@"nu-complete bug field core-components" = null,
   --priority: oneof<nothing, string>@"nu-complete bug field priority" = null,
   --severity: oneof<nothing, string>@"nu-complete bug field severity" = null,
   --version: string = "unspecified",
@@ -303,6 +303,15 @@ def "merge_with_input" [
   }
 
   $input
+}
+
+def "nu-complete bug field core-components" [] {
+  http get 'https://bugzilla.mozilla.org/rest/product/Core'
+    | get products
+    | first
+    | get components
+    | where is_active
+    | get name
 }
 
 def "nu-complete bug field priority" [] {
