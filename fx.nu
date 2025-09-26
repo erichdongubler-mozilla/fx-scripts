@@ -82,5 +82,5 @@ export def "certify" [
 
 	let reviewers = $reviewers | append "#supply-chain-reviewers"
 
-	$"Bug ($bug) - chore: audit ($list_summary) r=($reviewers | str join ',')"
+	$"Bug ($bug) - chore\(rust\): audit ($list_summary) r=($reviewers | str join ',')"
 }
