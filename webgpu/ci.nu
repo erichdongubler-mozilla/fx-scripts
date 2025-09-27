@@ -275,10 +275,13 @@ export def "search reports by-test-message" [
 
 export def "search reports by-test-name" [
   term: string,
+  --regex,
   --in-dir: directory = "../wpt/",
   --include-skipped = false,
 ] {
   use std/log [] # set up `log` cmd. state
+
+  let search_for_term = test-searcher --regex $term
 
   let files = (
     ls (wptreport-glob $in_dir) | where type == file
@@ -292,7 +295,7 @@ export def "search reports by-test-name" [
       }
       $json
         | get results
-        | where test =~ $term
+        | where { get test | do $search_for_term }
         | each {
           { file: $file test: $in }
         }
@@ -342,5 +345,16 @@ def "search reports clean-search-results" [
     $pre_filtered
   } else {
     $pre_filtered | where status != 'SKIP'
+  }
+}
+
+def "test-searcher" [
+  term: string,
+  --regex,
+]: nothing -> closure {
+  if $regex {
+    { $in =~ $term }
+  } else {
+    { $in | str contains $term }
   }
 }
