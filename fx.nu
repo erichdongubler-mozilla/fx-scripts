@@ -71,6 +71,18 @@ export def "certify" [
 		cargo vet certify --accept-all --criteria $criteria -- ...$args
 	}
 
+	certify-generate-revision-msg $recs --reviewers $reviewers --bug $bug
+}
+
+def "certify-generate-revision-msg" [
+	recs: list<list<string>>,
+	--reviewers (-r): list<string> = [],
+	# Reviewer(s) to set for a revision message. `#supply-chain-reviewers` is always appended to
+	# this list.
+	--bug: int | null = null,
+	# The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
+	# rendered commit message.
+] {
 	let list_summary = $recs | each {
 		$'`($in.0)` ($in | slice 1.. | str join " → ")'
 	} | str join ', '
