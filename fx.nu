@@ -53,6 +53,7 @@ export def "bootstrap lines-to-disable" [] {
 # - `jj commit -m (fx certify --bug 99999999 [hashlink 0.9.0 0.10.0])`
 export def "certify" [
 	recs: list<list<string>>,
+	--criteria: string = "safe-to-deploy",
 	# A list of lists of positional arguments to provide to `cargo vet certify …` invocations.
 	#
 	# Typically, you'll want to provide `[$crate $version]` or `[$crate $old_version $new_version]`
@@ -67,7 +68,7 @@ export def "certify" [
 	# rendered commit message.
 ]: nothing -> string {
 	for args in $recs {
-		cargo vet certify --accept-all --criteria safe-to-deploy -- ...$args
+		cargo vet certify --accept-all --criteria $criteria -- ...$args
 	}
 
 	let list_summary = $recs | each {
