@@ -52,7 +52,7 @@ export def "bootstrap lines-to-disable" [] {
 # - `git commit -m (fx certify [hashlink 0.9.0 0.10.0])`
 # - `jj commit -m (fx certify --bug 99999999 [hashlink 0.9.0 0.10.0])`
 export def "certify" [
-	recs: list<list<string>>, 
+	recs: list<list<string>>,
 	# A list of lists of positional arguments to provide to `cargo vet certify …` invocations.
 	#
 	# Typically, you'll want to provide `[$crate $version]` or `[$crate $old_version $new_version]`
