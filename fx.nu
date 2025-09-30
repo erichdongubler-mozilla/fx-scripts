@@ -44,6 +44,47 @@ export def "bootstrap lines-to-disable" [] {
 	]
 }
 
+# Certify Rust crates a la `certify`, but en masse from `cargo vet check --output-format json`.
+# Useful when prototyping, and you just want to get to `mach vendor rust` ASAP.
+export def "certify-from-cargo-vet-check" [
+	--reviewers (-r): list<string> = [],
+	# Reviewer(s) to set for a revision message. `#supply-chain-reviewers` is always appended to
+	# this list.
+	--bug: int | null = null,
+	# The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
+	# rendered commit message.
+] {
+	let suggestions = cargo vet check --output-format json
+		| from json
+		| get suggest.suggestions
+
+	mut recs = []
+	for suggestion in $suggestions {
+		let positional_args = [
+			$suggestion.name
+			...(if $suggestion.suggested_diff.from != null {
+				[$suggestion.suggested_diff.from]
+			} else {
+				[]
+			})
+			$suggestion.suggested_diff.to
+		]
+
+		(
+			cargo vet certify
+			...(
+				$suggestion.suggested_criteria
+					| each { ['--criteria' $in] }
+					| flatten
+			)
+			--accept-all
+			...$positional_args
+		)
+		$recs = $recs | append [$positional_args]
+	}
+	certify-generate-revision-msg $recs --reviewers $reviewers --bug $bug
+}
+
 # Certify Rust crates for usage in Mozilla source using `cargo vet -- certify`, returning the
 # suggested commit message for the audits you perform
 #
