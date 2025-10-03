@@ -344,6 +344,7 @@ def "search reports clean-search-results" [
         | move worker_type --after subsuite
         | update duration { into duration --unit ms }
         | move status --before subtests
+        | reject subsuite
     }
 
   if $include_skipped {
