@@ -321,6 +321,7 @@ def "search reports clean-search-results" [
         | do $sanitize_windows_paths
         | str replace $in_dir_absolute ''
         | str replace $WPT_REPORT_ARTIFACT_PATH ''
+        | str replace --regex '/0/$' '/'
     }
     | flatten
     | each {|entry|
