@@ -309,14 +309,18 @@ def "search reports clean-search-results" [
 ] {
   let results = $in
 
-  let artifact_path_for_platform = $WPT_REPORT_ARTIFACT_PATH | path parse | path join
+  let sanitize_windows_paths = { str replace '\' '/' --all }
+
+  let in_dir_absolute = $in_dir | path expand | do $sanitize_windows_paths
 
   let pre_filtered = $results
     | flatten
     | update file {
       $in
-        | str replace ($in_dir | path expand) ''
-        | str replace $artifact_path_for_platform ''
+        | path expand
+        | do $sanitize_windows_paths
+        | str replace $in_dir_absolute ''
+        | str replace $WPT_REPORT_ARTIFACT_PATH ''
     }
     | flatten
     | each {|entry|
