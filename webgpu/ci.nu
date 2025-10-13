@@ -195,7 +195,11 @@ export def --wrapped "update-expected" [
     $args = $args | append ["--on-skip-only" $on_skip_only]
   }
 
-  $args = $args | append ($implementation_status | each { ["--implementation-status" $in] } | flatten)
+  $args = $args | append (
+    $implementation_status
+      | each { ["--implementation-status" $in] }
+      | flatten
+  )
 
   (
     process-reports update-expected
