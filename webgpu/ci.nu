@@ -173,6 +173,29 @@ def "process-reports" [
   log info "Done!"
 }
 
+export def "trim-reports" [
+  --in-dir: directory = "../wpt/",
+  ...task_ids: string,
+]: nothing -> list<string> {
+  use std/log [] # set up `log` cmd. state
+
+  let abs_dir_path = $in_dir | path expand
+
+  let files = fd '.' --type 'directory' $in_dir
+    | lines
+    | where ($it | path split | last) in $task_ids
+    | each { path join '*' $WPT_REPORT_ARTIFACT_PATH | glob $in }
+    | flatten
+
+  if ($files | is-not-empty) {
+    rm ...$files
+  }
+
+  $files
+    | path relative-to $abs_dir_path
+    | each {|p| $in_dir | path join $p }
+}
+
 export def --wrapped "update-expected" [
   --remove-old,
   --preset: string@"process-reports preset",
