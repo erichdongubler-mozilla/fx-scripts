@@ -1,0 +1,12 @@
+[package]
+name = "ticktick"
+version = "0.1.0"
+edition = "2024"
+authors = ["Erich Gubler"]
+publish = false
+
+[dependencies]
+chumsky = "0.11.1"
+clap = { version = "4.5.49", features = ["derive"] }
+env_logger = "0.11.8"
+petgraph = "0.8.3"
