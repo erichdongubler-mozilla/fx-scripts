@@ -213,7 +213,7 @@ export def "bugs apply-output-fmt" [
         | select id type summary product component assigned_to_detail status resolution last_change_time
         | update assigned_to_detail { get email }
         | rename --column { assigned_to_detail: assigned_to_detail.email }
-        | into value
+        | update cells { detect type }
     }
     _ => {
       error make {
