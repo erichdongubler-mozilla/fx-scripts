@@ -72,6 +72,8 @@ export def "commandeer-updatebot-bug" [
   bug: int@"nu-complete updatebot bug cts",
   --dl-try-run-reports = true,
   --dl-try-run-reports-in-dir: directory = "../wpt/",
+  --moz-phab-patch = true,
+  --moz-phab-patch-apply-to-here,
 ] {
   use std/log
 
@@ -81,6 +83,9 @@ export def "commandeer-updatebot-bug" [
   ]
   if $dl_try_run_reports {
     $fields = $fields | append 'comments'
+  }
+  if $moz_phab_patch {
+    $fields = $fields | append 'attachments'
   }
   let original_bug_state = bugzilla bug get --include-fields $fields $bug
   let name = bugzilla whoami | get name
@@ -115,6 +120,60 @@ export def "commandeer-updatebot-bug" [
         | select name type_id id status
         | update status '-'
     )
+  }
+
+  if $moz_phab_patch {
+    log info "attempting to create patch locally…"
+    let phabricator_patches = $original_bug_state
+      | get attachments
+      | where $it.content_type == 'text/x-phabricator-request' and $it.is_obsolete == 0
+
+    match ($phabricator_patches | length) {
+      0 => {
+        log warning "no patches detected against bug, expected 1; forgoing local patch application"
+      }
+      1 => {
+        let patch_attachment_data = $phabricator_patches
+          | first
+          | get data
+          | decode base64
+          | decode utf-8
+
+          let phabricator_patch_url_re = '^https://phabricator.services.mozilla.com/(?<rev_id>D\d+)$'
+          let patch_revision_id = try {
+            $patch_attachment_data
+              | parse --regex $phabricator_patch_url_re
+              | first
+              | get rev_id
+          } catch {
+            error make --unspanned {
+              msg: ([
+                  " `"
+                  $phabricator_patch_url_re
+                  "` did not match attachment contents:\n\n"
+                  $patch_attachment_data
+              ] | str join)
+            }
+          }
+
+        let apply_to_args = if $moz_phab_patch_apply_to_here {
+          ['--apply-to=here']
+        } else {
+          []
+        }
+        (
+          ^moz-phab patch
+            $patch_revision_id
+            ...$apply_to_args
+        )
+      }
+      len => {
+        log warning ([
+          "multiple patches detected against bug, expected 1; "
+          "forgoing local patch application"
+        ] | str join)
+      }
+    }
   }
 
   if $dl_try_run_reports {
