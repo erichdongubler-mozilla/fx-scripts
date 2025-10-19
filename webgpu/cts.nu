@@ -59,8 +59,24 @@ export def "begin-revendor" [
 
 export def "commandeer-updatebot-bug" [
   bug: int@"nu-complete updatebot bug cts",
+  --dl-try-run-reports = true,
+  --dl-try-run-reports-in-dir: directory = "../wpt/",
+  --moz-phab-patch = true,
+  --moz-phab-patch-apply-to-here,
 ] {
-  let original_bug_state = bugzilla bug get --include-fields [blocks flags] $bug
+  use std/log
+
+  mut fields = [
+    'blocks'
+    'flags'
+  ]
+  if $dl_try_run_reports {
+    $fields = $fields | append 'comments'
+  }
+  if $moz_phab_patch {
+    $fields = $fields | append 'attachments'
+  }
+  let original_bug_state = bugzilla bug get --include-fields $fields $bug
   let name = bugzilla whoami | get name
 
   if $WEBGPU_UPDATE_CTS_BUG_ID not-in $original_bug_state.blocks {
@@ -93,6 +109,117 @@ export def "commandeer-updatebot-bug" [
         | select name type_id id status
         | update status '-'
     )
+  }
+
+  if $dl_try_run_reports {
+    const WEBGPU_CI = path self './ci.nu'
+    use $WEBGPU_CI
+
+    def exactly_one [what: string]: list -> any {
+      let values = $in
+
+      if ($values | length) != 1 {
+        error make --unspanned {
+          msg: $"expected single ($what), got multiple"
+        }
+      }
+
+      $values | first
+    }
+
+    let try_run = $original_bug_state
+      | get comments
+      | where $it.creator == 'update-bot@bmo.tld'
+      | get text
+      | each --flatten {
+        parse --regex ([
+          "^I've submitted a try run for this commit: "
+          '(?P<url>'
+          (
+            'https://treeherder.mozilla.org/jobs?'
+              | str replace '.' '\.' --all
+              | str replace '?' '\?' --all
+          )
+          '.*)$'
+        ] | str join)
+          | get url
+      }
+      | each {|url|
+        def exactly_one_query_param [key: string]: list -> any {
+          where $it.key == $key
+            | get value
+            | exactly_one $"`($key)` in query params. of ($url)"
+        }
+
+        let params = $url
+          | url parse
+          | get params
+
+        let repo = $params | exactly_one_query_param 'repo'
+        let revision = $params | exactly_one_query_param 'revision'
+
+        $'($repo):($revision)'
+      }
+      | exactly_one "comment with Try push noted"
+
+    (
+      ci dl-reports
+        $try_run
+        --in-dir $dl_try_run_reports_in_dir
+    )
+  }
+
+  if $moz_phab_patch {
+    let phabricator_patches = $original_bug_state
+      | get attachments
+      | where $it.content_type == 'text/x-phabricator-request' and $it.is_obsolete == 0
+
+    match ($phabricator_patches | length) {
+      0 => {
+        log warning "no patches detected against bug, expected 1; forgoing local patch application"
+      }
+      1 => {
+        let patch_attachment_data = $phabricator_patches
+          | first
+          | get data
+          | decode base64
+          | decode utf-8
+
+          let phabricator_patch_url_re = '^https://phabricator.services.mozilla.com/(?<rev_id>D\d+)$'
+          let patch_revision_id = try {
+            $patch_attachment_data
+              | parse --regex $phabricator_patch_url_re
+              | first
+              | get rev_id
+          } catch {
+            error make --unspanned {
+              msg: ([
+                  " `"
+                  $phabricator_patch_url_re
+                  "` did not match attachment contents:\n\n"
+                  $patch_attachment_data
+              ] | str join)
+            }
+          }
+
+        let apply_to_args = if $moz_phab_patch_apply_to_here {
+          ['--apply-to=here']
+        } else {
+          []
+        }
+        (
+          ^moz-phab patch
+            $patch_revision_id
+            ...$apply_to_args
+        )
+      }
+      len => {
+        log warning ([
+          "multiple patches detected against bug, expected 1; "
+          "forgoing local patch application"
+        ] | str join)
+      }
+    }
   }
 }
 
