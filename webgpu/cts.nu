@@ -277,6 +277,9 @@ export def "commandeer-updatebot-bug" [
       )
     }
   }
+
+  # log info "Updating patch…"
+  # # TODO
 }
 
 def "gh current-mainline-commit" [
