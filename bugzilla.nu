@@ -165,6 +165,18 @@ def "bug field-values to-completions" [
   get values | get name
 }
 
+const BUGLIST_FIELDS = [
+  id
+  type
+  summary
+  product
+  component
+  assigned_to
+  status
+  resolution
+  last_change_time
+]
+
 # Fetch a single bug via the `Bug Get` API:
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#get-bug>
 export def "bug get" [
@@ -217,7 +229,7 @@ export def "bugs apply-output-fmt" [
       $bugs | _buglist_type_diags
       # NOTE: This tries to emulate the format found in `buglist.cgi`.
       $bugs
-        | select id type summary product component assigned_to status resolution last_change_time
+        | select ...$BUGLIST_FIELDS
         | update cells { detect type }
     }
     _ => {
@@ -421,8 +433,11 @@ export def "search" [
       _ => "full"
     }
   }
-  $criteria = $criteria | merge (match $include_fields {
-    null => ({})
+  $criteria = $criteria | merge (match [$include_fields, $output_fmt] {
+    [null, null] | [null, 'buglist'] => {
+      include_fields: $BUGLIST_FIELDS
+    }
+    [null, _] => ({})
     _ => { include_fields: $include_fields }
   })
   rest-api get-json $"bug($final_path_segment)?($criteria | url build-query)"
