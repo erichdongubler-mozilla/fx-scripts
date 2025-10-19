@@ -169,13 +169,16 @@ def "bug field-values to-completions" [
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#get-bug>
 export def "bug get" [
   id_or_alias: oneof<int, string>,
+  --include-fields: oneof<nothing, list<string>> = null,
+  # A subset of bug fields that the server should return. Fewer fields generally receive a faster
+  # answer.
   --output-fmt: oneof<nothing, string>@"nu-complete bugs output-fmt" = null,
   # The formatting to apply to bugs returned here. See `bugzilla search`'s `--output-fmt` for more
   # details.
 ] {
   use std/log [] # set up `log` cmd. state
 
-  let bugs = search $id_or_alias --output-fmt $output_fmt
+  let bugs = search $id_or_alias --include-fields $include_fields --output-fmt $output_fmt
   match ($bugs | length) {
     1 => { $bugs | first }
     0 => {
@@ -398,6 +401,9 @@ export def "quicksearch" [
 export def "search" [
   id_or_alias?: oneof<int, string>,
   --criteria: record = {},
+  --include-fields: oneof<nothing, list<string>> = null,
+  # A subset of bug fields that the server should return. Fewer fields generally receive a faster
+  # answer.
   --output-fmt: oneof<nothing, string>@"nu-complete bugs output-fmt" = null,
   # The formatting to apply to bugs returned here.
 ] {
@@ -409,6 +415,16 @@ export def "search" [
   } else {
     $"/($id_or_alias)"
   }
+  let output_fmt = $output_fmt | default {
+    match $include_fields {
+      null => "buglist",
+      _ => "full"
+    }
+  }
+  $criteria = $criteria | merge (match $include_fields {
+    null => ({})
+    _ => { include_fields: $include_fields }
+  })
   rest-api get-json $"bug($final_path_segment)?($criteria | url build-query)"
     | parse-response get "bugs"
     | bugs apply-output-fmt $output_fmt
