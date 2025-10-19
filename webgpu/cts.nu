@@ -60,7 +60,7 @@ export def "begin-revendor" [
 export def "commandeer-updatebot-bug" [
   bug: int@"nu-complete updatebot bug cts",
 ] {
-  let original_bug_state = bugzilla bug get --output-fmt full $bug
+  let original_bug_state = bugzilla bug get --include-fields [blocks flags] $bug
   let name = bugzilla whoami | get name
 
   if $WEBGPU_UPDATE_CTS_BUG_ID not-in $original_bug_state.blocks {
