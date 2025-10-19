@@ -70,11 +70,18 @@ export def "begin-revendor" [
 
 export def "commandeer-updatebot-bug" [
   bug: int@"nu-complete updatebot bug cts",
+  --dl-try-run-reports = true,
+  --dl-try-run-reports-in-dir: directory = "../wpt/",
 ] {
-  let fields = [
+  use std/log
+
+  mut fields = [
     'blocks'
     'flags'
   ]
+  if $dl_try_run_reports {
+    $fields = $fields | append 'comments'
+  }
   let original_bug_state = bugzilla bug get --include-fields $fields $bug
   let name = bugzilla whoami | get name
 
@@ -108,6 +115,75 @@ export def "commandeer-updatebot-bug" [
         | select name type_id id status
         | update status '-'
     )
+  }
+
+  if $dl_try_run_reports {
+    const WEBGPU_CI = path self './ci.nu'
+    use $WEBGPU_CI
+
+    def exactly_one [
+      what: string,
+      --or-not,
+    ]: list -> any {
+      let values = $in
+
+      match ($values | length) {
+        1 => ($values | first)
+        0 if $or_not => null
+        len => {
+          error make --unspanned {
+            msg: $"expected single ($what), got ($values | length)"
+          }
+        }
+      }
+    }
+
+    log info "searching for comment noting a Try run to download WPT reports from…"
+
+    let try_run = $original_bug_state
+      | get comments
+      | where $it.creator == 'update-bot@bmo.tld'
+      | get text
+      | each --flatten {
+        parse --regex ([
+          "^I've submitted a try run for this commit: "
+          '(?P<url>'
+          (
+            'https://treeherder.mozilla.org/jobs?'
+              | str replace '.' '\.' --all
+              | str replace '?' '\?' --all
+          )
+          '.*)$'
+        ] | str join)
+          | get url
+      }
+      | each {|url|
+        def exactly_one_query_param [key: string]: list -> any {
+          where $it.key == $key
+            | get value
+            | exactly_one $"`($key)` in query params. of ($url)"
+        }
+
+        let params = $url
+          | url parse
+          | get params
+
+        let repo = $params | exactly_one_query_param 'repo'
+        let revision = $params | exactly_one_query_param 'revision'
+
+        $'($repo):($revision)'
+      }
+      | exactly_one --or-not "comment with Try push noted"
+
+    if $try_run == null {
+      log warning "unable to determine Try push, looks like ya gotta do it yourself"
+    } else {
+      (
+        ci dl-reports
+          $try_run
+          --in-dir $dl_try_run_reports_in_dir
+      )
+    }
   }
 }
 
