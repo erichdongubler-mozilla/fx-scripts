@@ -169,7 +169,9 @@ def "bug field-values to-completions" [
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#get-bug>
 export def "bug get" [
   id_or_alias: oneof<int, string>,
-  --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
+  --output-fmt: oneof<nothing, string>@"nu-complete bugs output-fmt" = null,
+  # The formatting to apply to bugs returned here. See `bugzilla search`'s `--output-fmt` for more
+  # details.
 ] {
   use std/log [] # set up `log` cmd. state
 
@@ -200,14 +202,14 @@ export def "bug update" [
 
 # Apply a filter to the raw data of a bug returned by `bugzilla bug get` and the like.
 export def "bugs apply-output-fmt" [
-  fmt: string@"nu-complete bugs output-fmt"
+  fmt: oneof<nothing, string>@"nu-complete bugs output-fmt" = null,
 ]: any -> any {
   use std/log [] # set up `log` cmd. state
 
   let bugs = $in
   match $fmt {
     "full" => { $bugs }
-    "buglist" => {
+    null |"buglist" => {
       def _buglist_type_diags []: table<id: int type: any summary: any product: any assigned_to: string status: any resolution: any last_change_time: any> -> any {}
       $bugs | _buglist_type_diags
       # NOTE: This tries to emulate the format found in `buglist.cgi`.
@@ -387,7 +389,9 @@ export def "product list" [
 # <https://bmo.readthedocs.io/en/latest/api/core/v1/bug.html#search-bugs>
 export def "quicksearch" [
   query: string,
-  --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
+  --output-fmt: oneof<nothing, string>@"nu-complete bugs output-fmt" = null,
+  # The formatting to apply to bugs returned here. See `bugzilla search`'s `--output-fmt` for more
+  # details.
 ] {
   use std/log [] # set up `log` cmd. state
 
@@ -399,7 +403,8 @@ export def "quicksearch" [
 export def "search" [
   id_or_alias?: oneof<int, string>,
   --criteria: record = {},
-  --output-fmt: string@"nu-complete bugs output-fmt" = "buglist",
+  --output-fmt: oneof<nothing, string>@"nu-complete bugs output-fmt" = null,
+  # The formatting to apply to bugs returned here.
 ] {
   use std/log [] # set up `log` cmd. state
 
