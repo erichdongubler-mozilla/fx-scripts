@@ -302,13 +302,6 @@ def "nu-complete bug field severity" [] {
   bug field 'bug_severity' | bug field-values to-completions
 }
 
-def "nu-complete product list output-fmt" [] {
-  [
-    "full"
-    "ids-only"
-  ]
-}
-
 def "nu-complete product type" [] {
   [
     "selectable"
@@ -362,7 +355,7 @@ export def "product get" [
 
 export def "product list" [
   --type: string@"nu-complete product type" = "enterable",
-  --output-fmt: string@"nu-complete product list output-fmt" = "full",
+  --output-fmt: string@["full" "ids-only"] = "full",
 ]: nothing -> record<ids: list<int>> {
   match $output_fmt {
     "full" => {
