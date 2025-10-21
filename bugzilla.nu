@@ -1,5 +1,3 @@
-use std/log
-
 const HOST = "https://bugzilla.mozilla.org"
 
 const USER_AGENT_HEADER = { "User-Agent": "ErichDonGubler-Bugzilla-Nushell/1.0" }
@@ -7,7 +5,7 @@ const USER_AGENT_HEADER = { "User-Agent": "ErichDonGubler-Bugzilla-Nushell/1.0" 
 def "auth-headers from-api-key" [
   --required-for: string | null = null,
 ] {
-  use std/log [] # set up `log` cmd. state
+  use std/log
 
   mut api_key = null
 
@@ -53,7 +51,7 @@ def "rest-api get-json" [
   url_path: string,
   --auth-required-for: oneof<nothing, string> = null,
 ]: nothing -> any {
-  use std/log [] # set up `log` cmd. state
+  use std/log
 
   let full_url = $"($HOST)/rest/($url_path)"
   log debug $"`GET`ting ($full_url | to nuon)"
@@ -84,7 +82,7 @@ def "rest-api post-json" [
   input: any,
   what: string = "`POST` request"
 ] {
-  use std/log [] # set up `log` cmd. state
+  use std/log
 
   let full_url = $"($HOST)/rest/($url_path)"
   log debug $"`POST`ing to ($full_url | to nuon) with input ($input | to nuon)"
@@ -100,7 +98,7 @@ def "rest-api put-json" [
   input: any,
   what: string = "`PUT` request"
 ] {
-  use std/log [] # set up `log` cmd. state
+  use std/log
 
   let full_url = $"($HOST)/rest/($url_path)"
   log debug $"`PUT`ting ($full_url | to nuon)"
@@ -125,8 +123,6 @@ export def "bug create" [
   --version: string = "unspecified",
   --extra: record = {},
 ] {
-  use std/log [] # set up `log` cmd. state
-
   let input = $extra
     | merge_with_input "assigned_to" "--assign-to-me" (
       if $assign_to_me { (whoami | get name) } else { null }
@@ -188,8 +184,6 @@ export def "bug get" [
   # The formatting to apply to bugs returned here. See `bugzilla search`'s `--output-fmt` for more
   # details.
 ] {
-  use std/log [] # set up `log` cmd. state
-
   let bugs = search $id_or_alias --include-fields $include_fields --output-fmt $output_fmt
   match ($bugs | length) {
     1 => { $bugs | first }
@@ -219,8 +213,6 @@ export def "bug update" [
 export def "bugs apply-output-fmt" [
   fmt: oneof<nothing, string>@"nu-complete bugs output-fmt" = null,
 ]: any -> any {
-  use std/log [] # set up `log` cmd. state
-
   let bugs = $in
   match $fmt {
     "full" => { $bugs }
@@ -292,6 +284,8 @@ def "merge_with_input" [
   option_name: string,
   option_value: any,
 ]: record -> record {
+  use std/log
+
   mut input = $in
 
   if $option_value != null {
@@ -403,8 +397,6 @@ export def "quicksearch" [
   # The formatting to apply to bugs returned here. See `bugzilla search`'s `--output-fmt` for more
   # details.
 ] {
-  use std/log [] # set up `log` cmd. state
-
   search --criteria { quicksearch: $query } --output-fmt $output_fmt
 }
 
@@ -419,8 +411,6 @@ export def "search" [
   --output-fmt: oneof<nothing, string>@"nu-complete bugs output-fmt" = null,
   # The formatting to apply to bugs returned here.
 ] {
-  use std/log [] # set up `log` cmd. state
-
   mut criteria = $criteria
   let final_path_segment = if $id_or_alias == null {
     ""
