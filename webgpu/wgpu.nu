@@ -116,12 +116,13 @@ export def "bindings begin-revendor" [
 
     try {
       bugzilla bug update $bug_id_webgpu_update_wgpu {
+        assigned_to: $assigned_to
         blocks: { remove: $update_dependents }
       }
     } catch {
       log warning ([
-        "failed to remove dependents from `webgpu-update-wgpu`; "
-        "please visit this URL and remove them: "
+        "failed to update `webgpu-update-wgpu`; "
+        "please visit this URL, remove dependents, and update the assignee: "
         "https://bugzilla.mozilla.org/show_bug.cgi?id=webgpu-update-wgpu"
       ] | str join)
     }
