@@ -356,6 +356,8 @@ export def "product get" [
 export def "product list" [
   --type: string@"nu-complete product type" = "enterable",
   --output-fmt: string@["full" "ids-only"] = "full",
+  # What data to fetch for queried products. `full` takes significantly more time to receive, but
+  # includes human-friendly information like names.
 ]: nothing -> record<ids: list<int>> {
   match $output_fmt {
     "full" => {
