@@ -201,7 +201,7 @@ export def "bug update" [
 # Apply a filter to the raw data of a bug returned by `bugzilla bug get` and the like.
 export def "bugs apply-output-fmt" [
   fmt: string@"nu-complete bugs output-fmt"
-]: table<id: int type: any summary: any product: any assigned_to_detail: record<email: string> status: any resolution: any last_change_time: any> -> any {
+]: table<id: int type: any summary: any product: any assigned_to: string status: any resolution: any last_change_time: any> -> any {
   use std/log [] # set up `log` cmd. state
 
   let bugs = $in
@@ -210,9 +210,7 @@ export def "bugs apply-output-fmt" [
     "buglist" => {
       # NOTE: This tries to emulate the format found in `buglist.cgi`.
       $bugs
-        | select id type summary product component assigned_to_detail status resolution last_change_time
-        | update assigned_to_detail { get email }
-        | rename --column { assigned_to_detail: assigned_to_detail.email }
+        | select id type summary product component assigned_to status resolution last_change_time
         | update cells { detect type }
     }
     _ => {
