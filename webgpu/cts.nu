@@ -7,7 +7,6 @@ const TIME = path self '../time.nu'
 use $TIME
 
 const WEBGPU_CONSTANTS = path self './constants.nu'
-use $WEBGPU_CONSTANTS [WGPU_REPO_PATH WGPU_REPO_URL]
 
 const WEBGPU_UPDATE_CTS_BUG_ID = 1863146 # `webgpu-update-cts`
 
@@ -26,13 +25,15 @@ export def "begin-revendor" [
     }
   }
 
-  let new_revision = $revision | if $revision != null {
-    # Normalize the commit ref. to a full SHA-1 hash.
-    http get $'https://api.github.com/repos/($WGPU_REPO_PATH)/commits/($revision)'
-      | get sha
-  } else {
-    gh current-mainline-commit gpuweb cts
-  }
+  let revision = $revision
+    | each {
+      # Normalize the commit ref. to a full SHA-1 hash.
+      http get $'https://api.github.com/repos/gpuweb/cts/commits/($in)'
+        | get sha
+    }
+    | default {
+      gh current-mainline-commit gpuweb cts
+    }
 
   let bug_id = $bug | default {
     let assigned_to = $assigned_to | default { bugzilla whoami | get name }
