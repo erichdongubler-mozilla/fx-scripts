@@ -37,15 +37,25 @@ export def "begin-revendor" [
 
   let bug_id = $bug | default {
     let assigned_to = $assigned_to | default { bugzilla whoami | get name }
-    (
-      bugzilla bug create
-        --summary $"Update WebGPU CTS to upstream \(week of (time monday-of-this-week)\)"
-        --extra {
-          assigned_to: $assigned_to
-          blocks: $WEBGPU_UPDATE_CTS_BUG_ID
-          priority: P1
-        }
-    ) | get id
+    let new_bug_id = try {
+      (
+        bugzilla bug create
+          --summary $"Update WebGPU CTS to upstream \(week of (time monday-of-this-week)\)"
+          --extra {
+            assigned_to: $assigned_to
+            blocks: $WEBGPU_UPDATE_CTS_BUG_ID
+            priority: P1
+          }
+      ) | get id
+    } catch {
+      error make --unspanned {
+        msg: $"failed to create new revendoring bug as dependency of bug ($WEBGPU_UPDATE_CTS_BUG_ID)"
+      }
+    }
+
+    log info $"filed bug ($new_bug_id)"
+
+    $new_bug_id
   }
 
   let moz_yaml_path = 'dom/webgpu/tests/cts/moz.yaml'
