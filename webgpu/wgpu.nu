@@ -97,7 +97,7 @@ export def "bindings begin-revendor" [
       bugzilla bug get --output-fmt full $bug_id_webgpu_update_wgpu | get blocks
     } catch {
       error make --unspanned {
-        msg: $"failed to fetch bugs depending on ($bug_id_webgpu_update_wgpu), bailing"
+        msg: $"failed to fetch bugs depending on bug ($bug_id_webgpu_update_wgpu), bailing"
       }
     }
 
