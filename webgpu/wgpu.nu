@@ -101,16 +101,22 @@ export def "bindings begin-revendor" [
       }
     }
 
-    let new_bug_id = (
-      bug create
-        --summary $"Update WGPU to upstream \(week of (time monday-of-this-week)\)"
-        --extra {
-          assigned_to: $assigned_to
-          status: 'ASSIGNED'
-          blocks: ($update_dependents | append $bug_id_webgpu_update_wgpu)
-          priority: P1
-        }
-    ) | get id
+    let new_bug_id = try {
+      (
+        bug create
+          --summary $"Update WGPU to upstream \(week of (time monday-of-this-week)\)"
+          --extra {
+            assigned_to: $assigned_to
+            status: 'ASSIGNED'
+            blocks: ($update_dependents | append $bug_id_webgpu_update_wgpu)
+            priority: P1
+          }
+      ) | get id
+    } catch {
+      error make --unspanned {
+        msg: $"failed to create new revendoring bug as dependency of bug ($bug_id_webgpu_update_wgpu)"
+      }
+    }
 
     log info $"filed bug ($new_bug_id)"
 
