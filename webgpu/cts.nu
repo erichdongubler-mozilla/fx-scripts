@@ -38,7 +38,7 @@ export def "begin-revendor" [
   let bug_id = $bug | default {
     let assigned_to = $assigned_to | default { bugzilla whoami | get name }
     (
-      bug create
+      bugzilla bug create
         --summary $"Update WebGPU CTS to upstream \(week of (time monday-of-this-week)\)"
         --extra {
           assigned_to: $assigned_to
