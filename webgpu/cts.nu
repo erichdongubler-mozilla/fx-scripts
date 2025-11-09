@@ -69,13 +69,48 @@ export def "begin-revendor" [
 }
 
 export def "commandeer-updatebot-bug" [
-  bug: int@"nu-complete updatebot bug cts",
+  bug: oneof<nothing, int>@"nu-complete updatebot bug cts" = null,
   --dl-try-run-reports = true,
   --dl-try-run-reports-in-dir: directory = "../wpt/",
   --moz-phab-patch = true,
   --moz-phab-patch-apply-to-here,
 ] {
   use std/log
+
+  let bug = $bug | default {
+    log info $"inferring bug-to-commandeer from dependencies of bug ($WEBGPU_UPDATE_CTS_BUG_ID)…"
+    let cts_update_dependencies = (
+      bugzilla bug get $WEBGPU_UPDATE_CTS_BUG_ID --include-fields ['depends_on']
+    )
+      | get depends_on
+      | bugzilla search --criteria { id: $in } --include-fields ['id' 'summary' 'resolution']
+      | where resolution == ''
+      | reject resolution
+      | move 'id' --first
+
+    let display_bug = { $"Bug ($in.id) - ($in.summary)" }
+
+    let bug = match ($cts_update_dependencies | length) {
+      1 => $cts_update_dependencies.0
+      0 => {
+        error make --unspanned {
+          msg: $"no open dependencies of bug ($WEBGPU_UPDATE_CTS_BUG_ID) found"
+        }
+      }
+      _ => {
+        for bug in $cts_update_dependencies {
+          log error ($bug | do $display_bug)
+        }
+        error make --unspanned {
+          msg: $"multiple open dependencies found for bug ($WEBGPU_UPDATE_CTS_BUG_ID); please pick one"
+        }
+      }
+    }
+
+    log info $"selected: ($bug | do $display_bug)"
+
+    $bug.id
+  }
 
   mut fields = [
     'blocks'
