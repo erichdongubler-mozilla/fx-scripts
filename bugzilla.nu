@@ -121,6 +121,7 @@ export def "bug create" [
   --priority: oneof<nothing, string>@"nu-complete bug field priority" = null,
   --severity: oneof<nothing, string>@"nu-complete bug field severity" = null,
   --version: string = "unspecified",
+  --alias: oneof<nothing, string> = null,
   --extra: record = {},
 ] {
   let input = $extra
@@ -135,6 +136,7 @@ export def "bug create" [
     | merge_with_input "priority" "--priority" $priority
     | merge_with_input "severity" "--severity" $severity
     | merge_with_input "version" "--version" $version
+    | merge_with_input "alias" "--alias" $alias
 
   rest-api post-json "bug" $input "bug creation"
 }
