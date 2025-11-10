@@ -28,7 +28,7 @@ export def "config copy" [
     let prompt_input = input "Update your Jujutsu repo config? [y/N] "
     match $prompt_input {
       "y" | "Y" => {
-        cp $resolved ($config_path)
+        cp $resolved $config_path
         print $"Copied `($resolved)` to `($config_path)`"
       }
       _ => {}
