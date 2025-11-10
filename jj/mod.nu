@@ -14,6 +14,7 @@ export def "config copy" [
     }
   }
   let config_path = jj config path --repo
+  touch $config_path
 
   try {
     print $"Old config: ($config_path)"
