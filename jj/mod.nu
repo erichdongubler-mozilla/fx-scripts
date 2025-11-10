@@ -16,6 +16,8 @@ export def "config copy" [
   let config_path = jj config path --repo
 
   try {
+    print $"Old config: ($config_path)"
+    print $"New config: ($resolved)"
     input "Press any key to view a diff with your current config…" --suppress-output
     print
   } catch {
