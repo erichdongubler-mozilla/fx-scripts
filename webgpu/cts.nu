@@ -123,7 +123,7 @@ export def "commandeer-updatebot-bug" [
   }
 
   if $moz_phab_patch {
-    log info "attempting to create patch locally…"
+    log debug "attempting to create patch locally…"
     let phabricator_patches = $original_bug_state
       | get attachments
       | where $it.content_type == 'text/x-phabricator-request' and $it.is_obsolete == 0
@@ -156,20 +156,20 @@ export def "commandeer-updatebot-bug" [
           }
         }
 
-        let apply_to_args = if $moz_phab_patch_apply_to_here {
-          ['--apply-to=here']
-        } else {
-          []
+        mut cmd_and_args = ['moz-phab' 'patch' $patch_revision_id]
+        if $moz_phab_patch_apply_to_here {
+          $cmd_and_args = $cmd_and_args | append ['--apply-to=here']
         }
-        (
-          ^moz-phab patch
-            $patch_revision_id
-            ...$apply_to_args
-        )
+
+        log info $"running `($cmd_and_args | str join ' ')`…"
+        run-external ...$cmd_and_args
       }
-      len => {
+      $len => {
+        for revision in $phabricator_patches {
+          log warning $revision
+        }
         log warning ([
-          "multiple patches detected against bug, expected 1; "
+          $"($len) patches detected against bug, expected 1; "
           "forgoing local patch application"
         ] | str join)
       }
