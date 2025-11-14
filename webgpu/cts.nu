@@ -139,22 +139,22 @@ export def "commandeer-updatebot-bug" [
           | decode base64
           | decode utf-8
 
-          let phabricator_patch_url_re = '^https://phabricator.services.mozilla.com/(?<rev_id>D\d+)$'
-          let patch_revision_id = try {
-            $patch_attachment_data
-              | parse --regex $phabricator_patch_url_re
-              | first
-              | get rev_id
-          } catch {
-            error make --unspanned {
-              msg: ([
-                  " `"
-                  $phabricator_patch_url_re
-                  "` did not match attachment contents:\n\n"
-                  $patch_attachment_data
-              ] | str join)
-            }
+        let phabricator_patch_url_re = '^https://phabricator.services.mozilla.com/(?<rev_id>D\d+)$'
+        let patch_revision_id = try {
+          $patch_attachment_data
+            | parse --regex $phabricator_patch_url_re
+            | first
+            | get rev_id
+        } catch {
+          error make --unspanned {
+            msg: ([
+                " `"
+                $phabricator_patch_url_re
+                "` did not match attachment contents:\n\n"
+                $patch_attachment_data
+            ] | str join)
           }
+        }
 
         let apply_to_args = if $moz_phab_patch_apply_to_here {
           ['--apply-to=here']
