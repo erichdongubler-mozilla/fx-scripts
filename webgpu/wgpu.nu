@@ -144,6 +144,12 @@ export def "bindings begin-revendor" [
     }
   }
 
+  # Work around a bug with `mach vendor …` replacing line endings.
+  open --raw $moz_yaml_path
+    | str replace --all (char crlf) (char lf)
+    | collect
+    | save --raw --force $moz_yaml_path
+
   for crate in $wgpu_crates.crates {
     let old_dep = $'($crate.version)@git:($wgpu_crates.revision)'
     let new_dep = $'($crate.version)@git:($new_revision)'
