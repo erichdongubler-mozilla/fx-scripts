@@ -14,6 +14,7 @@ export def "generate" [
   --with-ccache: oneof<string, nothing>@"nu-complete generate with-ccache" = "sccache",
   # Enables intermediate build artifact caching via the provided binary.
   --build-hook: oneof<path, nothing> = null,
+  --windows-rs-dir: oneof<directory, nothing> = null,
   # Hook a Python script into the handling of each `moz.build` file by setting
   # `MOZ_BUILD_HOOK=<path>`. Canonicalizes the provided path, and replaces backslashes with forward
   # slash.
@@ -57,6 +58,13 @@ export def "generate" [
         | path expand
         | str replace '\' '/' --all # `mach build` doesn't handle native Windows hook script paths. >:(
       $options = $options | append $'ac_add_options MOZ_BUILD_HOOK=($hook_script_path)'
+  }
+
+  if $windows_rs_dir != null {
+      let hook_script_path = $windows_rs_dir
+        | path expand
+        | str replace '\' '/' --all # `mach build` doesn't handle native Windows hook script paths. >:(
+      $options = $options | append $'ac_add_options MOZ_WINDOWS_RS_DIR=($hook_script_path)'
   }
 
   $options | append '' | str join "\n"
