@@ -30,6 +30,11 @@ export def "dl" [
     ...$revisions
   ]
   log info $"Downloading ($what) via `treeherder-dl ($args | quote-args-for-debugging)`…"
+  if (which treeherder-dl | is-empty) {
+    error make --unspanned {
+      msg: "`treeherder-dl` not found in `PATH`; do you need to install it?"
+    }
+  }
   treeherder-dl ...$args
 }
 
