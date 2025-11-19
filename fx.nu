@@ -53,7 +53,7 @@ export def "certify-from-cargo-vet-check" [
 	--bug: int | null = null,
 	# The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
 	# rendered commit message.
-] {
+]: nothing -> oneof<string, nothing> {
 	let output = cargo vet check --output-format json | echo $in
 	let exit_code = $env.LAST_EXIT_CODE
 
