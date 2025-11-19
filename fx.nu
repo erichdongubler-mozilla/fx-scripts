@@ -54,9 +54,43 @@ export def "certify-from-cargo-vet-check" [
 	# The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
 	# rendered commit message.
 ] {
-	let suggestions = cargo vet check --output-format json
-		| from json
-		| get suggest.suggestions
+	let output = cargo vet check --output-format json | echo $in
+	let exit_code = $env.LAST_EXIT_CODE
+
+	let output_json = $output | from json
+	let bad_exit_code_err = {
+		error make --unspanned {
+			msg: "underlying invocation of `cargo vet` returned a non-zero exit code, bailing"
+		}
+	}
+
+	if $exit_code == 101 {
+		do $bad_exit_code_err
+	}
+	if $output_json == null or 'error' in ($output_json | columns) {
+		let what_was_returned = if $output_json == null {
+			"empty output"
+		} else {
+			"an `error`"
+		}
+		print $output
+		error make --unspanned {
+			msg: ([
+				"underlying invocation of `cargo vet` returned "
+				$what_was_returned
+				" with exit code "
+				$exit_code
+				", bailing"
+			] | str join)
+		}
+	}
+
+	let suggestions = $output_json | get suggest.suggestions
+
+	if ($suggestions | is-empty) {
+		log warning "no suggestions to apply"
+		return
+	}
 
 	mut recs = []
 	for suggestion in $suggestions {
