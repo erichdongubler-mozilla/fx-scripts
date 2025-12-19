@@ -18,6 +18,11 @@ def effective-wc [] {
   }
 }
 
+def "nu-complete pin build add workspace" [] {
+  let build_tag_prefix = build_tag_prefix
+  jj workspace list --template 'name ++ "\n"'
+}
+
 def "nu-complete pin build hostname" [] {
   jj tag list --template 'name ++ "\n"' $'glob:($PIN_BUILD_PREFIX)/*'
     | lines
@@ -45,7 +50,7 @@ def "nu-complete pin ci remove push-revision" [] {
 export def "pin add build" [
   --revision (-r): oneof<string, nothing> = null,
   # Defaults to `@`, or `@-` if `@` is empty.
-  --workspace (-w): oneof<string, nothing> = null,
+  --workspace (-w): oneof<string, nothing>@"nu-complete pin build add workspace" = null,
   # Defaults to the current workspace name, found via `jj workspace root`.
 ] {
   let revision = $revision | default { effective-wc }
