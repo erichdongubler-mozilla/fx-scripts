@@ -45,7 +45,7 @@ def "nu-complete pin ci remove push-revision" [] {
 export def "pin add build" [
   --revision (-r): oneof<string, nothing> = null,
   # Defaults to `@`, or `@-` if `@` is empty.
-  --workspace (-w): oneof<string, nothing> = null,
+  --workspace (-w): oneof<string, nothing>@"nu-complete pin build workspace" = null,
   # Defaults to the current workspace name, found via `jj workspace root`.
 ] {
   let revision = $revision | default { effective-wc }
