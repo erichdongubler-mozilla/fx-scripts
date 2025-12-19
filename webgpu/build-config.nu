@@ -33,14 +33,16 @@ export def "generate cargo-profile-overrides" [] {
     'profile': {
       'release': {
         'package': (
-          $crates | get name | reduce --fold {} {|crate, acc|
-            let entry =  {
-              'opt-level': 0
-              'debug': true
-            } | wrap $crate
+          $crates
+            | get name
+            | reduce --fold {} {|crate, acc|
+              let entry = {
+                'opt-level': 0
+                'debug': true
+              } | wrap $crate
 
-            $acc | merge $entry
-          }
+              $acc | merge $entry
+            }
         )
       }
     }
