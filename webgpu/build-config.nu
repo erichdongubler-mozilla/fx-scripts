@@ -50,5 +50,5 @@ export def "generate cargo-profile-overrides" [] {
   }
   print --no-newline $"\n```toml\n($suggested_config | to toml)```\n"
 
-  print "…and your Rust code should be properly configured. Happy debugging!"
+  print "\n…and your Rust code should be properly configured. Happy debugging!"
 }
