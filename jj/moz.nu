@@ -26,7 +26,7 @@ def "nu-complete pin build hostname" [] {
     | uniq
 }
 
-def "nu-complete pin build remove workspace" [] {
+def "nu-complete pin build workspace" [] {
   let build_tag_prefix = build_tag_prefix
   jj tag list --template 'name ++ "\n"' $'glob:($build_tag_prefix)/*'
     | lines
@@ -56,7 +56,7 @@ export def "pin add build" [
 
 export def "pin remove build" [
   --hostname: oneof<string, nothing>@"nu-complete pin build hostname" = null,
-  --workspace: oneof<string, nothing>@"nu-complete pin build remove workspace" = null,
+  --workspace: oneof<string, nothing>@"nu-complete pin build workspace" = null,
 ] {
   let tag_name = tag-name build --workspace $workspace --hostname $hostname
   tag remove $tag_name
