@@ -35,6 +35,7 @@ export def "generate cargo-profile-overrides" [] {
         'package': (
           $crates
             | get name
+            | where $it !~ 'wgpu-core-deps'
             | reduce --fold {} {|crate, acc|
               let entry = {
                 'opt-level': 0
