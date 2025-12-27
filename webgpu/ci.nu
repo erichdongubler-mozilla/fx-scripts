@@ -263,9 +263,10 @@ def "process-reports preset" [] {
 
 def "process-reports implementation-status" [] {
   [
-    "implementing"
-    "backlog"
-    "not-implementing"
+    '["implementing"]'
+    '["implementing" "backlog"]'
+    '["not-implementing"]'
+    '["backlog"]'
   ]
 }
 
