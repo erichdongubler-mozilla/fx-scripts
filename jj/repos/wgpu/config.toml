@@ -24,3 +24,12 @@ patterns = ["glob:'**/*.toml'"]
 [fix.tools.rustfmt]
 command = ["rustfmt", "--emit=stdout", "--edition=2021"]
 patterns = ["glob:'**/*.rs'"]
+
+[fix.tools.rustfmt-deno]
+command = [
+  "rustfmt",
+  "--emit=stdout",
+  "--edition=2021",
+  "--config-path=deno_webgpu/rustfmt.toml",
+]
+patterns = ["glob:'deno_webgpu/**/*.rs'"]
