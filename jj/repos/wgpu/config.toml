@@ -5,12 +5,17 @@
 # consider sharing upstream!
 
 [revset-aliases]
+"trunk()" = "trunk@upstream"
 "immutable_heads()" = """
 builtin_immutable_heads()
 | remote_bookmarks(regex:'^v\\d+$', exact:'upstream')
 | remote_bookmarks(glob:'v0.*', exact:'upstream')
 | staging@upstream
 """
+
+[git]
+fetch = ["origin", "upstream"]
+push = "origin"
 
 [fix.tools.taplo]
 command = ["taplo", "format", "--stdin-filepath=$path", "-"]
