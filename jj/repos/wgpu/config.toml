@@ -7,8 +7,8 @@
 [revset-aliases]
 "immutable_heads()" = """
 builtin_immutable_heads()
-| remote_bookmarks(regex:'^v\\d+$', 'upstream')
-| remote_bookmarks(glob:'v0.*', 'upstream')
+| remote_bookmarks(regex:'^v\\d+$', exact:'upstream')
+| remote_bookmarks(glob:'v0.*', exact:'upstream')
 | staging@upstream
 """
 
