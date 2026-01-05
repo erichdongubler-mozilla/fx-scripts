@@ -17,7 +17,7 @@ export def "generate mozconfig" [] {
   )
 }
 
-# Generate Cargo manifest sections to force debug symbols and no optimization for WGPU crates used
+# Generate Cargo manifest sections to force debug symbols and no optimization for wgpu crates used
 # by `wgpu_bindings`.
 #
 # Generally, you'll want to place this command's output in `<gecko-checkout>/Cargo.toml`.

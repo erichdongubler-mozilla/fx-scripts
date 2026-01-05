@@ -104,7 +104,7 @@ export def "bindings begin-revendor" [
     let new_bug_id = try {
       (
         bug create
-          --summary $"Update WGPU to upstream \(week of (time monday-of-this-week)\)"
+          --summary $"Update wgpu to upstream \(week of (time monday-of-this-week)\)"
           --extra {
             assigned_to: $assigned_to
             status: 'ASSIGNED'
@@ -162,7 +162,7 @@ export def "bindings begin-revendor" [
 
   print "You are now ready to run `mach vendor rust`!"
 
-  $"Bug ($bug_id) - build\(webgpu\): update WGPU to ($new_revision) r=#webgpu-reviewers!"
+  $"Bug ($bug_id) - build\(webgpu\): update wgpu to ($new_revision) r=#webgpu-reviewers!"
 }
 
 export def "bindings moz.yaml path" [] {
