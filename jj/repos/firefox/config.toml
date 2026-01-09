@@ -10,6 +10,13 @@ fsmonitor.backend = "watchman"
 [aliases]
 "trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
 
+[fix.tools.clang-format]
+command = [
+  "~/.mozbuild/clang-tools/clang-tidy/bin/clang-format",
+  "--assume-filename=$path",
+]
+patterns = ["glob:'**/*.c'", "glob:'**/*.h'", "glob:'**/*.cpp'"]
+
 [git]
 fetch = ["origin", "upstream"]
 
