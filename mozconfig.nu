@@ -11,7 +11,7 @@ export def "generate" [
   # Enables debug symbols for compiled code.
   --enable-clang-plugin = true,
   # Enables `moz-clang-plugin` as a source of diagnostics for compiled code.
-  --with-ccache: oneof<string, nothing>@"nu-complete generate with-ccache" = "sccache",
+  --with-ccache: oneof<string, nothing>@"nu-complete generate with-ccache" = null,
   # Enables intermediate build artifact caching via the provided binary.
   --build-hook: oneof<path, nothing> = null,
   --windows-rs-dir: oneof<directory, nothing> = null,
