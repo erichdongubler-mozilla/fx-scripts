@@ -10,6 +10,13 @@
 [colors]
 "erichdongubler_moz_patch description" = "bright black"
 
+[fix.tools.clang-format]
+command = [
+  "~/.mozbuild/clang-tools/clang-tidy/bin/clang-format",
+  "--assume-filename=$path",
+]
+patterns = ["glob:'**/*.c'", "glob:'**/*.h'", "glob:'**/*.cpp'"]
+
 [fix.tools.mozlint]
 command = ["$root/tools/lint/pipelint", "$path"]
 patterns = ["glob:**/*"]
