@@ -28,3 +28,6 @@ trunk()
 
 [git]
 fetch = ["origin", "upstream"]
+
+[remotes.origin]
+auto-track-bookmarks = "*"
