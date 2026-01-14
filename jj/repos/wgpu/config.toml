@@ -33,3 +33,6 @@ command = [
   "--config-path=deno_webgpu/rustfmt.toml",
 ]
 patterns = ["glob:'deno_webgpu/**/*.rs'"]
+
+[remotes.origin]
+auto-track-bookmarks = "*"
