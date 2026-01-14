@@ -35,3 +35,6 @@ command = [
   "--assume-filename=$path",
 ]
 patterns = ["glob:'**/*.c'", "glob:'**/*.h'", "glob:'**/*.cpp'"]
+
+[remotes.origin]
+auto-track-bookmarks = "*"
