@@ -16,7 +16,7 @@ def "auth-headers from-api-key" [
     log debug $"no `($env_var_name)` defined"
   }
 
-  const config_path = $'($nu.home-path)/.config/bugzilla.toml'
+  const config_path = $'($nu.home-dir)/.config/bugzilla.toml'
   const toml_key = 'api_key'
   if $api_key == null {
     try {
