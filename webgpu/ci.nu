@@ -410,6 +410,98 @@ def "search reports clean-search-results" [
   }
 }
 
+export def "rm report" [
+  --in-dir: directory = "../wpt/",
+  ...task_ids: string,
+] {
+  use std/log
+
+  if ($task_ids | is-empty) {
+    error make --unspanned {
+      msg: "no task IDs specified"
+    }
+  }
+
+  let matches_by_task_id = $task_ids
+    | reduce --fold {} {|id, acc|
+      merge { $id: [] }
+    }
+    | let matches_by_task_id
+    | fd . --type directory -- $in_dir
+    | lines
+    | reduce --fold $matches_by_task_id {|dir, acc|
+      $task_ids
+        | where {
+          ($dir | path split | last --strict) == $in
+        }
+        | first
+        | each { { $in: [$dir] } }
+        | let matched_task_id
+        | if $matched_task_id == null {
+          $acc
+        } else {
+          ($acc | merge deep --strategy append $matched_task_id)
+        }
+    }
+
+  for task_id in $task_ids {
+    let matches = $matches_by_task_id | get $task_id
+    if ($matches | length) != ($task_ids | length)  {
+      log warning ([
+        $"count of found task directories \(($matches | length)\)"
+        " != "
+        $"count of task IDs \(($task_ids)\)"
+      ] | str join)
+      return
+    }
+  }
+
+  log debug $"matches: ($matches_by_task_id | to nuon --indent 2)"
+
+  let reports_to_delete = $matches_by_task_id
+    | values
+    | flatten
+    | each {|task_dir|
+      [
+        ...($task_dir | path split)
+        '*' # The task run ID, usually 0.
+        $WPT_REPORT_ARTIFACT_PATH
+      ]
+        | str join '/'
+        | glob --no-dir $in
+        | first
+        | let report_path
+        | $report_path
+        | each --flatten { ls $in | get type | first --strict }
+        | let report_path_type
+        | match $report_path_type {
+          "file" | "symlink" => $report_path
+          null => {
+            log warning ([
+              "directory for task ID exists, but no report was present; was it already deleted? path: "
+              $task_dir
+            ] | str join)
+          }
+          $ty => {
+            log warning ([
+              "expected file, but got "
+              $ty
+              " for file: "
+              $report_path
+            ] | str join)
+          }
+        }
+    }
+
+  if ($reports_to_delete | is-not-empty) {
+    log info ([
+      "deleting:\n"
+      ...$reports_to_delete
+    ] | str join "\n")
+    rm ...$reports_to_delete
+  }
+}
+
 def "test-searcher" [
   term: string,
   --regex,
