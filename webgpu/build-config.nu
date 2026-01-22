@@ -1,6 +1,6 @@
 # Generate the contents of a `mozconfig` file suitable for debugging WebGPU.
 #
-# Generally, you'll want to replace `<gecko-checkout/mozconfig` with the output of this command.
+# Generally, you'll want to replace `<gecko-checkout>/mozconfig` with the output of this command.
 export def "generate mozconfig" [] {
   const MOZCONFIG = path self '../mozconfig.nu'
   use $MOZCONFIG
