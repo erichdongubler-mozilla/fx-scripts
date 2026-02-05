@@ -31,3 +31,69 @@ fetch = ["origin", "upstream"]
 
 [remotes.origin]
 auto-track-bookmarks = "*"
+
+[template-aliases]
+"erichdongubler_preferred()" = """
+if(
+  root,
+  format_root_commit(self),
+  label(if(current_working_copy, "working_copy"),
+    concat(
+      separate(" ",
+        label("erichdongubler_dash_fluff", "---"),
+        format_short_change_id_with_change_offset(self),
+        format_short_commit_id(commit_id),
+        label("erichdongubler_dash_fluff", "-"),
+        bookmarks,
+        tags,
+        working_copies,
+        if(self.contained_in("first_parent(@)"), label("git_head", "HEAD")),
+        if(conflict, label("conflict", "conflict")),
+      ),
+      "\n",
+      separate(" ",
+        if(empty, label("empty", "(empty)")),
+        if(
+          description,
+          if(
+            description
+              .first_line()
+              .match(regex:'^Bug \\d+\\b'),
+            separate(
+              "",
+              hyperlink(
+                separate(
+                  "",
+                  "https://bugzilla.mozilla.org/show_bug.cgi?id=",
+                  description
+                    .first_line()
+                    .replace(
+                      regex:'^Bug (\\d+)\\b.*$',
+                      "$1",
+                    ),
+                ),
+                description
+                  .first_line()
+                  .replace(
+                    regex:'^(Bug \\d+)\\b.*$',
+                    "$1",
+                  ),
+              ),
+              description
+                .first_line()
+                .replace(
+                  regex:'^Bug \\d+\\b(.*)$',
+                  "$1",
+                ),
+            ),
+            description.first_line(),
+          ),
+          description_placeholder,
+        ),
+        label("author", if(author.name(), author.name(), email_placeholder)),
+        format_timestamp(committer.timestamp()),
+      ),
+    ),
+  ),
+)
+"""
