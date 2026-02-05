@@ -1,0 +1,8 @@
+#:schema https://jj-vcs.github.io/jj/latest/config-schema.json
+
+# NOTE: This configuration was generated from Erich's scripting at
+# <https://github.com/erichdongubler-mozilla/fx-scripts>. If you need to edit it,
+# consider sharing upstream!
+
+[remotes.origin]
+auto-track-bookmarks = "*"
