@@ -21,3 +21,32 @@ export def "env-vars" [
     $in
   }
 }
+
+# Runs using `uvx mozregression`.
+export def --wrapped "run-with-trace" [
+  --build: oneof<string, nothing> = null,
+  # Which Firefox build to run. Default's to yesterday's Nightly build.
+  --for-bug: oneof<int, nothing> = null,
+  # If specified, output is written to `~/Downloads/bug-<id>`. If not specified, output is written
+  # to `~/Downloads/<date>-wgpu-traces`.
+  ...args,
+  # All other arguments, which get forwarded to `mozregression`.
+] {
+  if (which uvx | is-empty) {
+    error make --unspanned {
+      msg: "no `uvx` binary detected in `PATH`"
+    }
+  }
+
+  let build = $build | default (date now | $in - 1day | format date "%Y-%m-%d")
+
+  let path = '~/Downloads/' | path join (if $for_bug != null {
+    $'bug-($for_bug)'
+  } else {
+    $'(date now | format date '%Y-%m-%d')-wgpu-traces'
+  })
+
+  with-env (env-vars --tracing-path $path) {
+    uvx mozregression --launch $build ...$args
+  }
+}
