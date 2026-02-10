@@ -7,6 +7,7 @@ export def "env-vars" [
     MOZ_DISABLE_GPU_SANDBOX: 1
     MOZ_LOG: "WebGPU:3,wgpu_core::*:3,wgpu_hal::*:3,naga::*:3,d3d12::*:3"
   } | if $tracing_path != null {
+    let tracing_path = $tracing_path | path expand
     if not ($tracing_path | path exists) {
       if not ($tracing_path | path dirname | path exists) {
         log warning $"`($tracing_path)`'s parent directory for did not exist, creating both…"
