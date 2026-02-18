@@ -17,7 +17,7 @@ export def "bindings begin-revendor" [
   use std/log [] # set up `log` cmd. state
 
   let mach_cmd = try {
-    which ./mach | first | get command
+    which ./mach | first --strict | get command
   } catch {
     error make --unspanned {
       msg: "failed to find `./mach` script in the CWD."
@@ -25,7 +25,7 @@ export def "bindings begin-revendor" [
   }
 
   try {
-    which cargo-vet | first
+    which cargo-vet | first --strict
   } catch {
     error make --unspanned {
       msg: "failed to find `cargo vet` binary in `PATH`"

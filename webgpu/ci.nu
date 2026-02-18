@@ -188,7 +188,7 @@ export def "trim-reports" [
 
   let files = fd '.' --type 'directory' $in_dir
     | lines
-    | where ($it | path split | last) in $task_ids
+    | where ($it | path split | last --strict) in $task_ids
     | each { path join '*' $WPT_REPORT_ARTIFACT_PATH | glob $in }
     | flatten
 

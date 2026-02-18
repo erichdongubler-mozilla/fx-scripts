@@ -151,7 +151,7 @@ export def "bug field" [
     0 => (error make --unspanned {
       msg: "internal error: service returned an empty list of matching fields"
     })
-    1 => ($fields | first )
+    1 => ($fields | first --strict)
     $len => (error make --unspanned {
       msg: $"internal error: service returned ($len) matching fields"
     })
@@ -188,7 +188,7 @@ export def "bug get" [
 ] {
   let bugs = search $id_or_alias --include-fields $include_fields --output-fmt $output_fmt
   match ($bugs | length) {
-    1 => { $bugs | first }
+    1 => { $bugs | first --strict }
     0 => {
         error make --unspanned {
         msg: "no bug found"
@@ -273,7 +273,7 @@ def "ids-or-names to-url" []: list<oneof<int, string>> -> record<ids: list<int>,
       }
     }
     1 => {
-      $"/($ids_or_names | first)"
+      $"/($ids_or_names | first --strict)"
     }
     _ => {
       $ids_or_names | ids-or-names to-record | $"?($in | url build-query)"
@@ -456,7 +456,7 @@ export def "user get" [
   )
     | parse-response get "users"
     | match ($in | length) {
-      1 => ($in | first)
+      1 => ($in | first --strict)
       0 => (
         error make --unspanned {
           msg: "no such ID or name found"
