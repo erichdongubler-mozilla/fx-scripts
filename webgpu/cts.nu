@@ -65,7 +65,7 @@ export def "begin-revendor" [
     log error $"failed to revendor from `($moz_yaml_path)`"
   }
 
-  $"Bug ($bug_id) - test\(webgpu\): update CTS to ($revision) r=#webgpu-reviewers"
+  $"WIP: Bug ($bug_id) - test\(webgpu\): update CTS to ($revision) r=#webgpu-reviewers"
 }
 
 export def "commandeer-updatebot-bug" [
