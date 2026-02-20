@@ -162,7 +162,7 @@ export def "bindings begin-revendor" [
 
   print "You are now ready to run `mach vendor rust`!"
 
-  $"Bug ($bug_id) - build\(webgpu\): update wgpu to ($new_revision) r=#webgpu-reviewers!"
+  $"WIP: Bug ($bug_id) - build\(webgpu\): update wgpu to ($new_revision) r=#webgpu-reviewers!"
 }
 
 export def "bindings moz.yaml path" [] {
