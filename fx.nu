@@ -54,10 +54,10 @@ export def "certify-from-cargo-vet-check" [
 	# The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
 	# rendered commit message.
 ]: nothing -> oneof<string, nothing> {
-	let output = cargo vet check --output-format json | echo $in
-	let exit_code = $env.LAST_EXIT_CODE
+	let output = cargo vet check --output-format json | complete
+	let exit_code = $output.exit_code
 
-	let output_json = $output | from json
+	let output_json = $output.stdout | from json
 	let bad_exit_code_err = {
 		error make --unspanned {
 			msg: "underlying invocation of `cargo vet` returned a non-zero exit code, bailing"
