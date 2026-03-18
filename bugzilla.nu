@@ -137,6 +137,9 @@ export def "bug create" [
     | merge_with_input "severity" "--severity" $severity
     | merge_with_input "version" "--version" $version
     | merge_with_input "alias" "--alias" $alias
+    | if $in.assigned_to? != null and $in.status? == null {
+      insert status 'ASSIGNED'
+    }
 
   rest-api post-json "bug" $input "bug creation"
 }
