@@ -96,11 +96,7 @@ export def "certify-from-cargo-vet-check" [
 	for suggestion in $suggestions {
 		let positional_args = [
 			$suggestion.name
-			...(if $suggestion.suggested_diff.from != null {
-				[$suggestion.suggested_diff.from]
-			} else {
-				[]
-			})
+			...($suggestion.suggested_diff.from | each { [$in] })
 			$suggestion.suggested_diff.to
 		]
 
