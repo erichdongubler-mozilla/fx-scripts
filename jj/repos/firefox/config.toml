@@ -13,6 +13,13 @@ fsmonitor.backend = "watchman"
 [colors]
 "erichdongubler_moz_patch description" = "yellow"
 
+[fix.tools.clang-format]
+command = [
+  "~/.mozbuild/clang-tools/clang-tidy/bin/clang-format",
+  "--assume-filename=$path",
+]
+patterns = ["glob:'**/*.c'", "glob:'**/*.h'", "glob:'**/*.cpp'"]
+
 [git]
 fetch = ["origin", "upstream"]
 
