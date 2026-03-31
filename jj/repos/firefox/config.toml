@@ -10,6 +10,12 @@ fsmonitor.backend = "watchman"
 [aliases]
 "trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
 
+[git]
+fetch = ["origin", "upstream"]
+
+[remotes.origin]
+auto-track-bookmarks = "*"
+
 [revset-aliases]
 "trunk()" = "main@upstream"
 
@@ -25,9 +31,3 @@ trunk()
 | remote_bookmarks(regex:'^esr\d+$')
 | remote_bookmarks(exact:'release')
 '''
-
-[git]
-fetch = ["origin", "upstream"]
-
-[remotes.origin]
-auto-track-bookmarks = "*"
