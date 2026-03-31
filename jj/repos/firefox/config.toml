@@ -10,6 +10,9 @@ fsmonitor.backend = "watchman"
 [aliases]
 "trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
 
+[colors]
+"erichdongubler_moz_patch description" = "yellow"
+
 [git]
 fetch = ["origin", "upstream"]
 
@@ -33,6 +36,29 @@ trunk()
 '''
 
 [template-aliases]
+"erichdongubler_moz_patch(x)" = '''
+label(
+  "erichdongubler_moz_patch",
+  if(
+    description
+      .match(regex:'\nDifferential Revision: https://phabricator.services.mozilla.com/D\d+\b'),
+    hyperlink(
+      description
+        .match(regex:'\nDifferential Revision: https://phabricator.services.mozilla.com/D\d+\b')
+        .replace(
+          regex:'\nDifferential Revision: (https://phabricator.services.mozilla.com/D\d+)',
+          '$1'
+        ),
+      description
+        .match(regex:'\nDifferential Revision: https://phabricator.services.mozilla.com/D\d+\b')
+        .replace(
+          regex:'^.*\nDifferential Revision: https://phabricator.services.mozilla.com/(D\d+)\b.*$',
+          '$1'
+        ),
+    )
+  )
+)
+'''
 "erichdongubler_preferred()" = """
 if(
   root,
@@ -48,6 +74,7 @@ if(
         tags,
         working_copies,
         if(self.contained_in("first_parent(@)"), label("git_head", "HEAD")),
+        erichdongubler_moz_patch(commit_id),
         if(conflict, label("conflict", "conflict")),
       ),
       "\n",
