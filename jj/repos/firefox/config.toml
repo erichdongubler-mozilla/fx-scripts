@@ -10,6 +10,9 @@ fsmonitor.backend = "watchman"
 [aliases]
 "trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
 
+[colors]
+"erichdongubler_moz_patch description" = "bright black"
+
 [git]
 fetch = ["origin", "upstream"]
 
@@ -33,70 +36,36 @@ trunk()
 '''
 
 [template-aliases]
-"erichdongubler_preferred()" = """
-if(
-  root,
-  format_root_commit(self),
-  label(if(current_working_copy, "working_copy"),
-    concat(
-      separate(" ",
-        label("erichdongubler_dash_fluff", "---"),
-        format_short_change_id_with_change_offset(self),
-        format_short_commit_id(commit_id),
-        label("erichdongubler_dash_fluff", "-"),
-        bookmarks,
-        tags,
-        working_copies,
-        if(self.contained_in("first_parent(@)"), label("git_head", "HEAD")),
-        if(conflict, label("conflict", "conflict")),
-      ),
-      "\n",
-      separate(" ",
-        if(empty, label("empty", "(empty)")),
-        if(
-          description,
-          if(
-            description
-              .first_line()
-              .match(regex:'^(?:WIP: )?Bug \\d+\\b'),
-            separate(
-              "",
-              description
-                .first_line()
-                .match(regex:'^(?:WIP: )?'),
-              hyperlink(
-                separate(
-                  "",
-                  "https://bugzilla.mozilla.org/show_bug.cgi?id=",
-                  description
-                    .first_line()
-                    .replace(
-                      regex:'^(?:WIP: )?Bug (\\d+)\\b.*$',
-                      "$1",
-                    ),
-                ),
-                description
-                  .first_line()
-                  .replace(
-                    regex:'^(?:WIP: )?(Bug \\d+)\\b.*$',
-                    "$1",
-                  ),
-              ),
-              description
-                .first_line()
-                .replace(
-                  regex:'^(?:WIP: )?Bug \\d+\\b(.*)$',
-                  "$1",
-                ),
-            ),
-            description.first_line(),
-          ),
-          description_placeholder,
-        ),
-        label("author", if(author.name(), author.name(), email_placeholder)),
-        format_timestamp(committer.timestamp()),
-      ),
-    ),
+
+"moz_description_first_line" = "moz_description_first_line(self)"
+"moz_description_first_line(commit)" = '''
+replace(
+  regex:'\bBug (\d+)\b',
+  commit.description().first_line(),
+  |c| hyperlink(
+    "https://bugzilla.mozilla.org/show_bug.cgi?id=" ++ c.get(1),
+    c.get(0),
   ),
 )
-"""
+'''
+
+"moz_phabricator_patches" = "moz_phabricator_patches(self)"
+"moz_phabricator_patches(commit)" = '''
+commit
+  .description()
+  .split(regex:'\n')
+  .filter(|l|
+    l.match(regex:'^Differential Revision: https://phabricator\.services\.mozilla.com/D\d+$'),
+  )
+  .map(|l|
+    replace(
+      regex:'^Differential Revision: (https://phabricator\.services\.mozilla\.com/(D\d+))$',
+      l,
+      |c| hyperlink(c.get(1), c.get(2)),
+    )
+  )
+  .join(' ')
+'''
+
+"erichdongubler_log_compact_description_line(commit)" = 'moz_description_first_line(commit)'
+"erichdongubler_log_compact_extra_refs(commit)" = 'label("erichdongubler_moz_patch", moz_phabricator_patches(commit))'
