@@ -58,9 +58,12 @@ if(
           if(
             description
               .first_line()
-              .match(regex:'^Bug \\d+\\b'),
+              .match(regex:'^(?:WIP: )?Bug \\d+\\b'),
             separate(
               "",
+              description
+                .first_line()
+                .match(regex:'^(?:WIP: )?'),
               hyperlink(
                 separate(
                   "",
@@ -68,21 +71,21 @@ if(
                   description
                     .first_line()
                     .replace(
-                      regex:'^Bug (\\d+)\\b.*$',
+                      regex:'^(?:WIP: )?Bug (\\d+)\\b.*$',
                       "$1",
                     ),
                 ),
                 description
                   .first_line()
                   .replace(
-                    regex:'^(Bug \\d+)\\b.*$',
+                    regex:'^(?:WIP: )?(Bug \\d+)\\b.*$',
                     "$1",
                   ),
               ),
               description
                 .first_line()
                 .replace(
-                  regex:'^Bug \\d+\\b(.*)$',
+                  regex:'^(?:WIP: )?Bug \\d+\\b(.*)$',
                   "$1",
                 ),
             ),
