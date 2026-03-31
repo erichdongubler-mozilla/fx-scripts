@@ -18,6 +18,33 @@ def effective-wc [] {
   }
 }
 
+export def "patch find" [
+  patch_id: oneof<string, nothing> = null,
+]: nothing -> oneof<string, nothing> {
+  use std/log
+  (
+
+    jj
+      log
+      --revisions ([
+        'description('
+          $'regex:"\n\\w+ Revision: https://phabricator.services.mozilla.com/($patch_id)\\b"'
+        ') & mutable()'
+      ] | str join)
+      --template 'json(self) ++ "\n"'
+      --no-graph
+  )
+    | from json --objects
+    | let found
+    | match $found {
+      [$thing] => $thing.change_id
+      [] => null
+      _ => {
+        log warning $"multiple revisions found with patch ($patch_id); returning `null`"
+      }
+    }
+}
+
 def "nu-complete pin build add workspace" [] {
   let build_tag_prefix = build_tag_prefix
   jj workspace list --template 'name ++ "\n"'
