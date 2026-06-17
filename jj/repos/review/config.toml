@@ -1,0 +1,52 @@
+#:schema https://jj-vcs.github.io/jj/latest/config-schema.json
+
+# NOTE: This configuration was generated from Erich's scripting at
+# <https://github.com/erichdongubler-mozilla/fx-scripts>. If you need to edit it,
+# consider sharing upstream!
+
+[colors]
+"erichdongubler_moz_patch description" = "bright black"
+
+[git]
+fetch = ["origin", "upstream"]
+
+[remotes.origin]
+auto-track-bookmarks = "*"
+
+[revset-aliases]
+"trunk()" = "main@upstream"
+
+[template-aliases]
+
+"moz_description_first_line" = "moz_description_first_line(self)"
+"moz_description_first_line(commit)" = '''
+replace(
+  regex:'\bBug (\d+)\b',
+  commit.description().first_line(),
+  |c| hyperlink(
+    "https://bugzilla.mozilla.org/show_bug.cgi?id=" ++ c.get(1),
+    c.get(0),
+  ),
+)
+'''
+
+"moz_phabricator_patches" = "moz_phabricator_patches(self)"
+"moz_phabricator_patches(commit)" = '''
+commit
+  .description()
+  .split(regex:'\n')
+  .filter(|l|
+    l.match(regex:'^Differential Revision: https://phabricator\.services\.mozilla.com/D\d+$'),
+  )
+  .map(|l|
+    replace(
+      regex:'^Differential Revision: (https://phabricator\.services\.mozilla\.com/(D\d+))$',
+      l,
+      |c| hyperlink(c.get(1), c.get(2)),
+    )
+  )
+  .join(' ')
+'''
+
+"erichdongubler_log_compact_description_line(commit)" = 'moz_description_first_line(commit)'
+"erichdongubler_log_compact_extra_refs(commit)" = 'label("erichdongubler_moz_patch", moz_phabricator_patches(commit))'
