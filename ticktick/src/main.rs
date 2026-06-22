@@ -9,11 +9,11 @@ mod front {
             extra::Full,
             prelude::{any, custom, group, just},
             span::SimpleSpan,
-            text::{inline_whitespace, newline},
+            text::{digits, inline_whitespace, newline},
         };
         use petgraph::graph::NodeIndex;
 
-        use crate::mid::{Task, TaskDb, TaskPriority, TaskState};
+        use crate::mid::{Task, TaskDb, TaskPriority, TaskSection, TaskState};
 
         #[derive(Clone, Debug)]
         pub(crate) struct TaskEntry<'a> {
@@ -25,19 +25,24 @@ mod front {
 
         pub fn task_entries<'a>()
         -> impl Parser<'a, &'a str, TaskDb<'a>, Full<error::Rich<'a, char>, (), ()>> {
-            let status_section = |priority, name, state| {
+            let status_section = |priority, name, state_name| {
                 group((just("###     "), just(name), newline()))
-                    .ignore_then(tasks(priority, state).map(|tasks| tasks.into_iter()))
+                    .ignore_then(tasks(priority, state_name).map(|tasks| tasks.into_iter()))
             };
             let priority_section = |priority: TaskPriority| {
                 group((just("## "), just(priority.ticktick_ident()), newline()))
                     .ignore_then(group((
-                        status_section(priority, "Completed", TaskState::Completed).or_not(),
-                        status_section(priority, "Won't Do", TaskState::WontDo).or_not(),
-                        status_section(priority, "Undone", TaskState::Undone).or_not(),
+                        status_section(priority, "Completed", TaskSection::Completed).or_not(),
+                        status_section(priority, "Won't Do", TaskSection::WontDo).or_not(),
+                        // TODO: Not sure if this should be below `Undone`.
+                        status_section(priority, "In Progress", TaskSection::InProgress).or_not(),
+                        status_section(priority, "Undone", TaskSection::Undone).or_not(),
                     )))
-                    .map(|(completed, wont_do, undone)| {
-                        [completed, wont_do, undone].into_iter().flatten().flatten()
+                    .map(|(completed, wont_do, in_progress, undone)| {
+                        [completed, wont_do, in_progress, undone]
+                            .into_iter()
+                            .flatten()
+                            .flatten()
                     })
             };
             let title = just("# ")
@@ -67,12 +72,38 @@ mod front {
 
         fn tasks<'a>(
             priority: TaskPriority,
-            state: TaskState,
+            state_name: TaskSection,
         ) -> impl Parser<'a, &'a str, Vec<TaskEntry<'a>>, Full<error::Rich<'a, char>, (), ()>>
         {
-            let name_and_parent = |indent| {
+            let percent_digits = digits(10).to_slice().try_map(|n: &str, span| {
+                if let Ok(n) = n.parse::<u8>()
+                    && n <= 100
+                {
+                    Ok(n)
+                } else {
+                    Err(error::Rich::custom(
+                        span,
+                        "failed to parse this as a number 0 <= n <=100",
+                    ))
+                }
+            });
+
+            let in_progress_checkbox = just("[")
+                .ignore_then(percent_digits)
+                .then_ignore(just("%] "));
+
+            let name_and_parent = move |indent| {
+                let checkbox = custom(move |input| {
+                    if matches!(state_name, TaskSection::InProgress) && indent == 1 {
+                        input.parse(in_progress_checkbox).map(Some)
+                    } else {
+                        Ok(None)
+                    }
+                });
+
                 group((just("    ").repeated().exactly(indent), just("- ")))
                     .ignore_then(group((
+                        checkbox,
                         any()
                             .and_is(just(" /").ignored().or(newline()).not())
                             .repeated()
@@ -96,10 +127,22 @@ mod front {
                     let mut children_stack = vec![vec![]];
                     let mut indent = 1;
                     let children = loop {
-                        if let Some(((name, name_span), parent)) =
+                        if let Some((percentage_complete, (name, name_span), parent)) =
                             input.parse(name_and_parent(indent).or_not())?
                         {
                             let priority = if indent == 1 { Some(priority) } else { None };
+                            let state = match (state_name, percentage_complete) {
+                                (TaskSection::Undone | TaskSection::InProgress, pc) => {
+                                    TaskState::Undone {
+                                        percentage_complete: pc.unwrap_or(0),
+                                    }
+                                }
+                                (TaskSection::Completed, None) => TaskState::Completed,
+                                (TaskSection::WontDo, None) => TaskState::WontDo,
+                                (_, Some(_)) => {
+                                    panic!("internal error: progress parsed unexpectedly")
+                                }
+                            };
                             children_stack.last_mut().unwrap().push(TaskEntry {
                                 inner: Task {
                                     priority,
@@ -217,10 +260,26 @@ pub(crate) mod mid {
     }
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub(crate) enum TaskState {
+    pub(crate) enum TaskSection {
         Undone,
         Completed,
         WontDo,
+        InProgress,
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub(crate) enum TaskState {
+        Undone { percentage_complete: u8 },
+        Completed,
+        WontDo,
+    }
+
+    impl Default for TaskState {
+        fn default() -> Self {
+            Self::Undone {
+                percentage_complete: 0,
+            }
+        }
     }
 
     pub(crate) struct TaskDb<'a> {
@@ -276,9 +335,18 @@ pub(crate) mod mid {
                         task_idx: NodeIndex,
                     ) {
                         let task = task_graph.node_weight(task_idx).unwrap();
-                        let state = task.state.unwrap_or(TaskState::Undone);
+                        let state = task.state.unwrap_or_default();
+                        let mut in_progress_rendered = None;
                         let checkbox = match state {
-                            TaskState::Undone => "[ ]",
+                            TaskState::Undone {
+                                percentage_complete,
+                            } => {
+                                if percentage_complete != 0 {
+                                    in_progress_rendered.insert(format!("[{percentage_complete}%]"))
+                                } else {
+                                    "[ ]"
+                                }
+                            }
                             TaskState::Completed => "[x]",
                             // TODO: Should we ignore these?
                             TaskState::WontDo => "[nope]",
