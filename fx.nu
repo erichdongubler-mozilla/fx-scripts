@@ -192,3 +192,164 @@ def "certify-generate-revision-msg" [
 
 	$"Bug ($bug) - chore\(rust\): audit ($list_summary) r=($reviewers | str join ',')"
 }
+
+# NOTE: Modifies CWD, for convenience.
+export def --env "workspace create" [
+  --name: oneof<string, nothing> = null,
+  # The name of the workspace to create.
+  --dir: oneof<directory, nothing> = null,
+  --vcs: string@"nu-complete workspace create vcs" = "jj",
+  # The directory in which the new workspace should be placed.
+  #
+  # If unspecified, the parent of root directory of the current repo is used.
+  --sparse-type: string@"nu-complete workspace create sparse-type" = "full",
+  # Additional patterns for sparse checkout to use on top of `--sparse-type`. Only makes sense if
+  # `--sparse-type` is not `full` (the default).
+  --add-sparse-patterns: list<string> = [],
+  --no-change-cwd,
+]: nothing -> nothing {
+  use std
+
+  let specified_dir = $dir
+
+  match $vcs {
+    # # TODO: make this work
+    # "git" => {
+    #
+    # }
+    "jj" => {
+      let dir = $specified_dir | default { jj workspace root | path dirname }
+      if ($dir == "") {
+        mut msg: oneof<string, nothing> = null
+        mut hints: oneof<list<string>, nothing> = null
+        mut span = null
+
+        if $specified_dir == null {
+          $msg = "inferred `--dir` value came up empty"
+          $hints = [
+            ([
+              "`--dir` was unspecified, so this path was inferred: "
+              $dir
+            ] | str join)
+            "you can probably resolve this by explicitly specify `--dir`"
+          ]
+        } else {
+          $msg = "`--dir` cannot be an empty string"
+          $span = ($specified_dir | metadata).span
+        }
+
+        error make {
+          msg: $msg
+          label: {
+            span: $span
+          }
+          help: ($hints | str join "\n\n")
+        }
+      }
+      std assert ($dir != "") "internal error: no `$dir` specified"
+
+      # TODO: Use `path basename` of root instead of `firefox`?
+      let dir = [$dir $'firefox-($name)'] | path join
+      let recognized_types = nu-complete workspace create sparse-type
+      let recognized_type_results = $recognized_types | where value == $sparse_type
+      let recognized_type = match ($recognized_type_results | length) {
+        0 => {
+          error make {
+            msg: $"unrecognized checkout type: ($sparse_type | to nuon)"
+            labels: [
+              {
+                text
+              }
+            ]
+          }
+        }
+        1 => {
+          $recognized_type_results | first --strict
+        }
+        n => {
+          error make {
+            msg: $"internal error: ($sparse_type | to nuon) matched multiple types"
+          }
+        }
+      }
+
+      mut args = []
+      if ($recognized_type.sparse_patterns == null) {
+        std log warning $"`($recognized_type.value)` checkout type has no sparse patterns, this will take a while…"
+      } else {
+        $args = $args | append ['--sparse-patterns' 'empty']
+      }
+
+      ^jj workspace add --name $name $dir ...$args
+      # NOTE: `jj workspace add` should have informed the user of the end of this step already.
+
+      cd $dir
+
+      if ($recognized_type.sparse_patterns != null) {
+        let patterns_args = $recognized_type.sparse_patterns
+          | append $add_sparse_patterns
+          | each --flatten { ['--add' $in] }
+        jj sparse set ...$patterns_args
+      } else if ($add_sparse_patterns | is-not-empty) {
+        std log warning "ignoring `--sparse-patterns`, since `--sparse-type` is `full`"
+      }
+
+      if $no_change_cwd {
+        cd -
+      }
+    }
+    _ => {
+      error make {
+        msg: $"unrecognized VCS: ($vcs | to nuon)"
+        labels: [
+          {
+            text: ""
+            span: (metadata $vcs).span
+          }
+        ]
+      }
+    }
+  }
+}
+
+def "nu-complete workspace create sparse-type" [] {
+  [
+    {
+      value: "full"
+      description: "Full checkout (warning: heavy)"
+      sparse_patterns: null
+    }
+    {
+      value: "almost-empty"
+      description: "Almost empty checkout"
+      sparse_patterns: []
+    }
+  ] | update sparse_patterns {
+    if $in == null {
+      $in
+    } else {
+      $in
+        | append [
+          '.arcconfig' # NOTE: Needed so that `moz-phab` actually works.
+          '.gitignore'
+          '.hgignore'
+        ]
+        | sort --natural
+        | uniq
+    }
+  }
+}
+
+def "nu-complete workspace create vcs" [] {
+  [
+    # # TODO: make this work
+    # {
+    #   value: "git"
+    #   description: "Git"
+    # }
+    {
+      value: "jj"
+      description: "Jujutsu"
+    }
+  ]
+}
