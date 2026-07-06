@@ -45,6 +45,7 @@ export def "begin-revendor" [
             assigned_to: $assigned_to
             blocks: $WEBGPU_UPDATE_CTS_BUG_ID
             priority: P1
+            type: task
           }
       ) | get id
     } catch {
