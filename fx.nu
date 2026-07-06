@@ -301,6 +301,38 @@ export def "workspace create" [
 }
 
 def "nu-complete workspace create type" [] {
+  let mach_entry_points = [
+    "build/"
+    "mach"
+    "mach.cmd"
+    "mach.ps1"
+    "python/mach/"
+    "python/mozboot/"
+    "python/mozbuild/"
+    "python/mozversioncontrol/"
+    "python/sites/"
+    "third_party/python/"
+  ]
+
+  let mach_configure_files = [
+    ...$mach_entry_points
+    "configure.py"
+    "moz.configure"
+    "js/"
+  ]
+
+  let mach_vendor_files = [
+    ...$mach_entry_points
+    "testing/mozbase/"
+  ]
+
+  let mach_try_files = [
+    ...$mach_entry_points
+    "python/mozlint/"
+    "python/mozterm/"
+    "taskcluster/"
+  ]
+
   [
     {
       value: "full"
@@ -311,6 +343,41 @@ def "nu-complete workspace create type" [] {
       value: "almost-empty"
       description: "Almost empty checkout"
       sparse_patterns: []
+    }
+    {
+      value: "webgpu-cts"
+      description: "WebGPU CTS triage"
+      sparse_patterns: [
+        # CTS-specific stuff
+        "dom/webgpu/tests/cts/"
+        "testing/web-platform/mozilla/meta/webgpu/"
+        "testing/web-platform/mozilla/tests/webgpu/"
+        "testing/web-platform/tests/tools/third_party/"
+
+        ...$mach_try_files
+        ...$mach_vendor_files
+      ]
+    }
+    {
+      # TODO: Validate that this works.
+      value: "cargo"
+      description: "Cargo lockfile inspection"
+      sparse_patterns: [
+        "**/Cargo.lock",
+        "**/Cargo.toml",
+      ]
+    }
+    {
+      # TODO: Validate that this works.
+      value: "angle"
+      description: "ANGLE revendoring"
+      sparse_patterns: ([
+        "gfx/angle/"
+        "third_party/angle/"
+
+        ...$mach_try_files
+        ...$mach_vendor_files
+      ])
     }
   ] | update sparse_patterns {
     if $in == null {
