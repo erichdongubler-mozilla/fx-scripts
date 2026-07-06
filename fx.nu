@@ -344,6 +344,15 @@ def "nu-complete workspace create sparse-type" [] {
       description: "Almost empty checkout"
       sparse_patterns: []
     }
+    {
+      # TODO: Validate that this works.
+      value: "cargo"
+      description: "Cargo lockfile inspection"
+      sparse_patterns: [
+        "**/Cargo.lock",
+        "**/Cargo.toml",
+      ]
+    }
   ] | update sparse_patterns {
     if $in == null {
       $in
