@@ -238,6 +238,10 @@ export def --env "workspace create" [
     }
 
   match $vcs {
+    # # TODO: make this work
+    # "git" => {
+    #
+    # }
     "jj" => {
       let current_workspace = (
         jj workspace list --template 'json({"name" => name, "root" => root}) ++ "\n"'
@@ -464,6 +468,11 @@ def "nu-complete workspace create sparse-type" [] {
 
 def "nu-complete workspace create vcs" [] {
   [
+    # # TODO: make this work
+    # {
+    #   value: "git"
+    #   description: "Git"
+    # }
     {
       value: "jj"
       description: "Jujutsu"
