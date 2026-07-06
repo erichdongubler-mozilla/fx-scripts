@@ -232,6 +232,10 @@ export def --env "workspace create" [
     }
 
   match $vcs {
+    # # TODO: make this work
+    # "git" => {
+    #
+    # }
     "jj" => {
       let parent_dir = $specified_parent_dir | default { jj workspace root | path dirname }
       if $parent_dir == "" {
@@ -429,6 +433,11 @@ def "nu-complete workspace create sparse-type" [] {
 
 def "nu-complete workspace create vcs" [] {
   [
+    # # TODO: make this work
+    # {
+    #   value: "git"
+    #   description: "Git"
+    # }
     {
       value: "jj"
       description: "Jujutsu"
