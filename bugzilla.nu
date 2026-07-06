@@ -262,7 +262,7 @@ def "ids-or-names to-record" []: list<oneof<int, string>> -> record<ids: list<in
   }
 }
 
-def "ids-or-names to-url" []: list<oneof<int, string>> -> record<ids: list<int>, names: list<string>> {
+def "ids-or-names to-url" []: list<oneof<int, string>> -> string {
   let ids_or_names = $in
 
   match ($ids_or_names | length) {

@@ -413,7 +413,7 @@ def "search reports clean-search-results" [
 def "test-searcher" [
   term: string,
   --regex,
-]: nothing -> closure {
+]: string -> closure {
   if $regex {
     { $in =~ $term }
   } else {

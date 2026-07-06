@@ -231,7 +231,7 @@ export def "bindings use-local-wgpu" [
 
 def "workspace-members" [
   --path: directory,
-]: nothing -> record<> {
+]: nothing -> table {
   (
     cargo metadata --format-version 1
       --manifest-path $path
