@@ -7,7 +7,7 @@ def "auth-headers from-api-key" [
 ] {
   use std/log
 
-  mut api_key = null
+  mut api_key: oneof<string, nothing> = null
 
   const env_var_name = 'BUGZILLA_API_KEY'
   try {
@@ -139,6 +139,8 @@ export def "bug create" [
     | merge_with_input "alias" "--alias" $alias
     | if $in.assigned_to? != null and $in.status? == null {
       insert status 'ASSIGNED'
+    } else {
+      $in
     }
 
   rest-api post-json "bug" $input "bug creation"
@@ -302,7 +304,7 @@ def "merge_with_input" [
         "were specified; resolving with the option's value"
       ] | str join)
     }
-    $input = $input | merge ({} | insert $field_name $option_value)
+    $input = $input | merge { $field_name: $option_value }
   }
 
   $input

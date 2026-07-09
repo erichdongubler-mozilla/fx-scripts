@@ -56,7 +56,11 @@ export def "bindings begin-revendor" [
 
     if $env.LAST_EXIT_CODE != 0 {
       error make --unspanned {
-        msg: $"internal error: failed to run `mach vendor --check-for-update ($moz_yaml_path)`"
+        msg: ([
+          "internal error: "
+          $"failed to run `mach vendor --check-for-update ($moz_yaml_path)`; "
+          $"error code ($env.LAST_EXIT_CODE)"
+        ] | str join)
       }
     }
 
