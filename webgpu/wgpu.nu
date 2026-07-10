@@ -162,29 +162,7 @@ export def "bindings begin-revendor" [
     | save --raw --force $moz_yaml_path
 
   let vet_suggestions = (fx cargo-vet-check-output).suggest.suggestions
-    | reduce --fold { wgpu_specific: [], others: [] } {|suggestion, acc|
-      if $suggestion.name in ($wgpu_crates.crates | get name) and '@git' in $suggestion.suggested_diff.to {
-        let old_version = $wgpu_crates.crates
-          | where name == $suggestion.name
-          | first --strict
-          | get version
-        $acc | update wgpu_specific {
-          append (
-            # NOTE: `suggested_diff.from` has only a crate version, which omits the old Git
-            # revision. This destroys and recreates the un-importable entry for wgpu crates, but
-            # that creates significant noise with the set of auditors in the entry. Reintroduce the
-            # Git revision so we preserve the set of existing auditors.
-            # NOTE: We use `old_version` here instead of `suggested_diff.from` because, if there is
-            # a newer version of a `wgpu` component here, it will suggest that instead of the
-            # version we were previously based on. I'm not sure why this bug happens yet.
-            $suggestion
-              | update suggested_diff.from { $'($old_version)@git:($wgpu_crates.revision)' }
-          )
-        }
-      } else {
-        $acc | update others { append $suggestion }
-      }
-    }
+    | partition-vet-suggestions --wgpu-crates $wgpu_crates
 
   [...$vet_suggestions.wgpu_specific ...$vet_suggestions.others]
     | fx certify-from-cargo-vet-check-suggestions
@@ -275,6 +253,35 @@ export def "bindings use-local-wgpu" [
   cargo update ...($crates | get name | each { ['--package' $in] } | flatten)
   print "You are now ready to run `mach vendor rust`!"
 }
+
+def "partition-vet-suggestions" [
+  --wgpu-crates: record<revision: string, crates: table<name: string, version: string>>,
+]: table<name: string, suggested_diff: record<from: string, to: string>> -> record<wgpu_specific: table<name: string, suggested_diff: record<from: string, to: string>>, others: table<name: string, suggested_diff: record<from: string, to: string>>> {
+  reduce --fold { wgpu_specific: [], others: [] } {|suggestion, acc|
+    if $suggestion.name in ($wgpu_crates.crates | get name) and '@git' in $suggestion.suggested_diff.to {
+      let old_version = $wgpu_crates.crates
+        | where name == $suggestion.name
+        | first --strict
+        | get version
+      $acc | update wgpu_specific {
+        append (
+          # NOTE: `suggested_diff.from` has only a crate version, which omits the old Git
+          # revision. This destroys and recreates the un-importable entry for wgpu crates, but
+          # that creates significant noise with the set of auditors in the entry. Reintroduce the
+          # Git revision so we preserve the set of existing auditors.
+          # NOTE: We use `old_version` here instead of `suggested_diff.from` because, if there is
+          # a newer version of a `wgpu` component here, it will suggest that instead of the
+          # version we were previously based on. I'm not sure why this bug happens yet.
+          $suggestion
+          | update suggested_diff.from { $'($old_version)@git:($wgpu_crates.revision)' }
+        )
+      }
+    } else {
+      $acc | update others { append $suggestion }
+    }
+  }
+}
+
 
 def "workspace-members" [
   --path: directory,
