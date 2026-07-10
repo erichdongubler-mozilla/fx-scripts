@@ -162,7 +162,10 @@ export def "bindings begin-revendor" [
     | save --raw --force $moz_yaml_path
 
   let vet_suggestions = (fx cargo-vet-check-output).suggest.suggestions
+    | tee { log info $"suggestion: ($in | to nuon --indent 2)"; log info $"wgpu_crates: ($wgpu_crates | to nuon --indent 2)"}
     | partition-vet-suggestions --wgpu-crates $wgpu_crates
+
+  log info $"vet_suggestions: ($vet_suggestions | to nuon --indent 2)"
 
   [...$vet_suggestions.wgpu_specific ...$vet_suggestions.others]
     | fx certify-from-cargo-vet-check-suggestions
