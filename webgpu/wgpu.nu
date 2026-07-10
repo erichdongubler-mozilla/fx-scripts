@@ -45,7 +45,11 @@ export def "bindings begin-revendor" [
     }
   }
 
-  let wgpu_crates = $moz_yaml | crates-from-bindings-moz.yaml
+  let wgpu_crates = (
+    crates-from-bindings-moz.yaml
+      --moz-yaml $moz_yaml
+      --cargo-metadata (cargo metadata --format-version 1 | from json)
+  )
 
   let new_revision = $revision | if $revision != null {
     # Normalize the commit ref. to a full SHA-1 hash.
@@ -174,16 +178,15 @@ export def "bindings moz.yaml path" [] {
 }
 
 export def "crates-from-bindings-moz.yaml" [
-]: record<vendoring: record<url: string> origin: record<revision: string>> -> record<revision: string crates: table<name: string version: string>>  {
-  let moz_yaml = $in
-
+  --moz-yaml: record<origin: record<revision: string>>,
+  --cargo-metadata: table<packages: record<source: string>>,
+]: nothing -> record<revision: string crates: table<name: string version: string>>  {
   let revision = $moz_yaml.origin.revision
 
   {
     revision: $revision
     crates: (
-      cargo metadata --format-version 1
-        | from json
+      $cargo_metadata
         | get packages
         | where {
           $in.source != null and $in.source == $'git+($moz_yaml.vendoring.url)?rev=($revision)#($revision)'
@@ -200,11 +203,10 @@ export def "bindings use-local-wgpu" [
 
   log debug "Fetching crates to patch from bindings deps…"
   let crates = (
-    open (bindings moz.yaml path)
-      | crates-from-bindings-moz.yaml
-      | get crates
-      | select name
-  )
+    crates-from-bindings-moz.yaml
+      --moz-yaml (open (bindings moz.yaml path))
+      --cargo-metadata (cargo metadata --format-version 1 | from json)
+  ) | get crates | select name
   log debug $"Working with the following crates: ($crates | to nuon --indent 2)"
 
   let local_crates = if $path == null {
