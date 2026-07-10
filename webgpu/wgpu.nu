@@ -16,6 +16,9 @@ export def "bindings begin-revendor" [
   --bug: oneof<nothing, int, string> = null,
   --revision: oneof<nothing, string> = null,
   --assigned-to: oneof<nothing, string> = null,
+  --vcs: oneof<nothing, string>@"nu-complete vcs" = "auto",
+  # The VCS to integrate with for automatic revision creation. Can be of `"auto"`, `"jj"`, or
+  # `null`.
 ] {
   use std/log [] # set up `log` cmd. state
 
@@ -255,6 +258,24 @@ export def "bindings use-local-wgpu" [
 
   cargo update ...($crates | get name | each { ['--package' $in] } | flatten)
   print "You are now ready to run `mach vendor rust`!"
+}
+
+def "nu-complete vcs" [] {
+  [
+    {
+      value: "auto"
+      description: "Auto-detect VCS"
+    }
+    # # TODO: make this work
+    # {
+    #   value: "git"
+    #   description: "Git"
+    # }
+    {
+      value: "jj"
+      description: "Jujutsu"
+    }
+  ]
 }
 
 def "partition-vet-suggestions" [
