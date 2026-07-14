@@ -315,7 +315,7 @@ export def "search reports by-test-name" [
 ] {
   use std/log [] # set up `log` cmd. state
 
-  let search_for_term = test-searcher --regex $term
+  let search_for_term = test-searcher --regex=$regex $term
 
   let files = (
     ls (wptreport-glob $in_dir) | where type == file
