@@ -303,6 +303,7 @@ export def "search reports by-test-message" [
           { file: $file test: $in }
         }
     }
+    | flatten
     | search reports clean-search-results $in_dir
 }
 
@@ -333,6 +334,7 @@ export def "search reports by-test-name" [
           { file: $file test: $in }
         }
     }
+    | flatten
     | search reports clean-search-results $in_dir
 }
 
@@ -348,7 +350,6 @@ def "search clean-search-results" [
   let in_dir_absolute = $in_dir | path expand | do $sanitize_windows_paths
 
   $results
-    | flatten
     | update file {
       $in
         | path expand
@@ -413,7 +414,7 @@ def "search reports clean-search-results" [
 def "test-searcher" [
   term: string,
   --regex,
-]: string -> closure {
+]: nothing -> closure {
   if $regex {
     { $in =~ $term }
   } else {
