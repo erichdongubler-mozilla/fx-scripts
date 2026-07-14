@@ -309,13 +309,13 @@ export def "search reports by-test-message" [
 
 export def "search reports by-test-name" [
   term: string,
-  --regex,
+  --mode: string@"nu-complete test-searcher mode" = "exact",
   --in-dir: directory = "../wpt/",
   --include-skipped = false,
 ] {
   use std/log [] # set up `log` cmd. state
 
-  let search_for_term = test-searcher --regex=$regex $term
+  let search_for_term = test-searcher --mode=$mode $term
 
   let files = (
     ls (wptreport-glob $in_dir) | where type == file
@@ -335,6 +335,11 @@ export def "search reports by-test-name" [
         }
     }
     | flatten
+    | if $mode == "exact" {
+      reject test
+    } else {
+      $in
+    }
     | search reports clean-search-results $in_dir
 }
 
@@ -505,11 +510,46 @@ export def "rm report" [
 
 def "test-searcher" [
   term: string,
-  --regex,
+  --mode: string@"nu-complete test-searcher mode" = "exact",
 ]: nothing -> closure {
-  if $regex {
-    { $in =~ $term }
-  } else {
-    { $in | str contains $term }
+  let all_modes: table<value: string, matcher: closure> = nu-complete test-searcher mode
+  let recognized_modes = $all_modes | where value == $mode
+  let recognized_mode = match (recognized_mode | length) {
+    1 => {
+      $recognized_modes | first --strict
+    }
+    0 => {
+      error make {
+        msg: $"unrecognized test searcher mode: ($mode | to nuon)"
+        labels: [
+          text: ""
+          span: (metadata $mode).span
+        ]
+      }
+    }
+    _ => {
+      error make "internal error: multiple recognized test searcher modes"
+    }
   }
+  do $recognized_mode.matcher $term
+}
+
+def "nu-complete test-searcher mode" [] {
+  [
+    {
+      value: "exact"
+      label: "Exact matches"
+      matcher: {|term| { $in == $term } }
+    }
+    {
+      value: "regex"
+      label: "Regular expression"
+      matcher: {|term| { $in =~ $term } }
+    }
+    {
+      value: "substring"
+      label: "Substring matching"
+      matcher: {|term| { $in | str contains $term } }
+    }
+  ]
 }
