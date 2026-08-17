@@ -309,6 +309,11 @@ export def --env "workspace create" [
         std log warning "ignoring `--sparse-patterns`, since `--sparse-type` is `full`"
       }
 
+      const WATCHMAN_CONFIG_PATH = 'tools/tryselect/watchman.json'
+      if (which watchman | is-not-empty) and ($WATCHMAN_CONFIG_PATH | path exists) {
+        open --raw $WATCHMAN_CONFIG_PATH | watchman --json-command
+      }
+
       if $no_change_cwd {
         cd -
       }
