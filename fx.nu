@@ -314,6 +314,19 @@ export def --env "workspace create" [
         std log warning "ignoring `--sparse-patterns`, since `--sparse-type` is `full`"
       }
 
+      const WATCHMAN_CONFIG_PATH = 'tools/tryselect/watchman.json'
+      if (
+        (jj config get 'fsmonitor.backend') == "watchman"
+          and (jj file list $WATCHMAN_CONFIG_PATH) == $WATCHMAN_CONFIG_PATH
+      ) {
+        jj status | ignore --stdout # Start `jj`'s own `watchman` state.
+        if (which watchman | is-not-empty) {
+          jj file show $WATCHMAN_CONFIG_PATH | watchman --json-command
+        } else {
+          std log warning "`watchman` not found on current `PATH`; bailing on setting it up"
+        }
+      }
+
       if $no_change_cwd {
         cd -
       }
