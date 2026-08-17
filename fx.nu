@@ -314,6 +314,8 @@ export def --env "workspace create" [
       if $no_change_cwd {
         cd -
       }
+
+      # TODO: Enable `watchman` if it's available?
     }
     _ => {
       error make {
