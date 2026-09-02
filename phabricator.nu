@@ -6,7 +6,13 @@ export def "conduit api" [
   method: string,
   params: record = {},
   --host: string = $DEFAULT_HOST,
+  --dry-run, # Return the encoded parameters instead of sending them.
 ] {
+  if $dry_run {
+    # NOTE: Do this before the token to exclude it.
+    return $params
+  }
+
   let token = token-for-host $host
 
   let data = { 'api.token': $token } | merge $params
@@ -48,6 +54,7 @@ export def "conduit differential revision edit" [
 # See also: <https://phabricator.services.mozilla.com/conduit/method/differential.diff.search/>
 export def "conduit differential revision search" [
   --fields: record = {}, # Specify search fields manually
+  --dry-run, # Return the encoded parameters instead of sending them
 ] {
   mut query = {}
 
