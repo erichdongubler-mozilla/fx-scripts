@@ -142,7 +142,7 @@ export def "commandeer-updatebot-bug" [
     }
   }
 
-  log info "commandeering bug and updating classification…"
+  log info "reassigning bug and updating classification…"
   bugzilla bug update $bug {
     assigned_to: $name
     status: 'ASSIGNED'
