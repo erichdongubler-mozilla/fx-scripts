@@ -157,19 +157,12 @@ export def "commandeer-updatebot-bug" [
     )
   }
 
-  if $moz_phab_patch {
-    log debug "attempting to create patch locally…"
-    let phabricator_patches = $original_bug_state
-      | get attachments
-      | where $it.content_type == 'text/x-phabricator-request' and $it.is_obsolete == 0
-
-    match ($phabricator_patches | length) {
-      0 => {
-        log warning "no patches detected against bug, expected 1; forgoing local patch application"
-      }
-      1 => {
-        let patch_attachment_data = $phabricator_patches
-          | first
+  log debug "searching for Phabricator revisions as attachments…"
+  let phabricator_patches = $original_bug_state
+    | get attachments
+    | where $it.content_type == 'text/x-phabricator-request' and $it.is_obsolete == 0
+    | each {|attachment|
+        let patch_attachment_data = $attachment
           | get data
           | decode base64
           | decode utf-8
@@ -181,17 +174,28 @@ export def "commandeer-updatebot-bug" [
             | first
             | get rev_id
         } catch {
-          error make --unspanned {
-            msg: ([
-                " `"
-                $phabricator_patch_url_re
-                "` did not match attachment contents:\n\n"
-                $patch_attachment_data
-            ] | str join)
-          }
+          log warning ([
+              "Patch URL regex `"
+              $phabricator_patch_url_re
+              "` did not match attachment contents:\n\n"
+              $patch_attachment_data
+          ] | str join)
+          return null
         }
 
-        mut cmd_and_args = ['moz-phab' 'patch' $patch_revision_id]
+        $attachment | select summary | insert revision_id $patch_revision_id
+    }
+
+  if $moz_phab_patch {
+    log debug "attempting to create patch locally…"
+
+    match ($phabricator_patches | length) {
+      0 => {
+        log warning "no patches detected against bug, expected 1; forgoing local patch application"
+      }
+      1 => {
+        let revision_id = $phabricator_patches | first --strict | get revision_id
+        mut cmd_and_args = ['moz-phab' 'patch' $revision_id]
         if $moz_phab_patch_apply_to_here {
           $cmd_and_args = $cmd_and_args | append ['--apply-to=here']
         }
