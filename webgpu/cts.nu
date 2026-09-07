@@ -3,6 +3,9 @@ use std/log
 const BUGZILLA = path self "../bugzilla.nu"
 use $BUGZILLA
 
+const PHABRICATOR = path self "../phabricator.nu"
+use $PHABRICATOR
+
 const TIME = path self '../time.nu'
 use $TIME
 
@@ -72,6 +75,7 @@ export def "commandeer-updatebot-bug" [
   bug: oneof<nothing, int>@"nu-complete updatebot bug cts" = null,
   --dl-try-run-reports = true,
   --dl-try-run-reports-in-dir: directory = "../wpt/",
+  --commandeer-phabricator-revision = true,
   --moz-phab-patch = true,
   --moz-phab-patch-apply-to-here,
 ] {
@@ -186,6 +190,30 @@ export def "commandeer-updatebot-bug" [
 
         $attachment | select summary | insert revision_id $revision_id
     }
+
+  if $commandeer_phabricator_revision {
+    match ($phabricator_revisions | length) {
+      0 => {
+        log warning "no revisions detected against bug, expected 1; forgoing commandeering"
+      }
+      1 => {
+        let revision_id = $phabricator_revisions | first --strict | get revision_id
+        log info $"commandeering patch ($revision_id)…"
+        phabricator conduit differential revision edit --fields {
+          'constraints[ids][0]': $revision_id
+        }
+      }
+      $len => {
+        for revision in $phabricator_revisions {
+          log warning $revision
+        }
+        log warning ([
+          $"($len) revisions detected against bug, expected 1; "
+          "forgoing commandeering"
+        ] | str join)
+      }
+    }
+  }
 
   if $moz_phab_patch {
     log debug "attempting to create patch locally…"
