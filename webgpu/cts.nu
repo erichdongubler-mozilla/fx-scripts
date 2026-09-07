@@ -167,12 +167,13 @@ export def "commandeer-updatebot-bug" [
           | decode base64
           | decode utf-8
 
-        let phabricator_patch_url_re = '^https://phabricator.services.mozilla.com/(?<rev_id>D\d+)$'
+        let phabricator_patch_url_re = '^https://phabricator.services.mozilla.com/D(?<rev_id>\d+)$'
         let patch_revision_id = try {
           $patch_attachment_data
             | parse --regex $phabricator_patch_url_re
             | first --strict
             | get rev_id
+            | into int
         } catch {
           log warning ([
               "Patch URL regex `"
@@ -195,7 +196,7 @@ export def "commandeer-updatebot-bug" [
       }
       1 => {
         let revision_id = $phabricator_patches | first --strict | get revision_id
-        mut cmd_and_args = ['moz-phab' 'patch' $revision_id]
+        mut cmd_and_args = ['moz-phab' 'patch' $'D($revision_id)']
         if $moz_phab_patch_apply_to_here {
           $cmd_and_args = $cmd_and_args | append ['--apply-to=here']
         }
