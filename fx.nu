@@ -212,6 +212,23 @@ export def --env "workspace create" [
 
   let specified_dir = $dir
 
+  let name = $name
+    | default {
+      let env_var_name = 'ZELLIJ_SESSION_NAME'
+      let zellij_session_name = $env | get --optional $env_var_name
+      if $zellij_session_name == null {
+        std log debug $"tried to infer `--name` from `$env.($env_var_name)`, but it was undefined"
+      } else {
+        std log info $"inferred `--name` from `$env.($env_var_name)`: ($zellij_session_name)"
+      }
+      $zellij_session_name
+    }
+    | default {
+      error make --unspanned {
+        msg: "`--name` was not provided, and no fallbacks yielded a value"
+      }
+    }
+
   match $vcs {
     # # TODO: make this work
     # "git" => {
