@@ -171,7 +171,7 @@ export def "commandeer-updatebot-bug" [
         let patch_revision_id = try {
           $patch_attachment_data
             | parse --regex $phabricator_patch_url_re
-            | first
+            | first --strict
             | get rev_id
         } catch {
           log warning ([
