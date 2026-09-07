@@ -142,7 +142,7 @@ export def "commandeer-updatebot-bug" [
     }
   }
 
-  log info "commandeering bug and updating classification…"
+  log info "reassigning bug and updating classification…"
   bugzilla bug update $bug {
     assigned_to: $name
     status: 'ASSIGNED'
@@ -157,41 +157,46 @@ export def "commandeer-updatebot-bug" [
     )
   }
 
-  if $moz_phab_patch {
-    log debug "attempting to create patch locally…"
-    let phabricator_patches = $original_bug_state
-      | get attachments
-      | where $it.content_type == 'text/x-phabricator-request' and $it.is_obsolete == 0
-
-    match ($phabricator_patches | length) {
-      0 => {
-        log warning "no patches detected against bug, expected 1; forgoing local patch application"
-      }
-      1 => {
-        let patch_attachment_data = $phabricator_patches
-          | first
+  log debug "searching for Phabricator revisions as attachments…"
+  let phabricator_revisions = $original_bug_state
+    | get attachments
+    | where $it.content_type == 'text/x-phabricator-request' and $it.is_obsolete == 0
+    | each {|attachment|
+        let revision_attachment_data = $attachment
           | get data
           | decode base64
           | decode utf-8
 
-        let phabricator_patch_url_re = '^https://phabricator.services.mozilla.com/(?<rev_id>D\d+)$'
-        let patch_revision_id = try {
-          $patch_attachment_data
+        let phabricator_patch_url_re = '^https://phabricator.services.mozilla.com/D(?<rev_id>\d+)$'
+        let revision_id = try {
+          $revision_attachment_data
             | parse --regex $phabricator_patch_url_re
-            | first
+            | first --strict
             | get rev_id
+            | into int
         } catch {
-          error make --unspanned {
-            msg: ([
-                " `"
-                $phabricator_patch_url_re
-                "` did not match attachment contents:\n\n"
-                $patch_attachment_data
-            ] | str join)
-          }
+          log warning ([
+              "Patch URL regex `"
+              $phabricator_patch_url_re
+              "` did not match attachment contents:\n\n"
+              $revision_attachment_data
+          ] | str join)
+          return null
         }
 
-        mut cmd_and_args = ['moz-phab' 'patch' $patch_revision_id]
+        $attachment | select summary | insert revision_id $revision_id
+    }
+
+  if $moz_phab_patch {
+    log debug "attempting to create patch locally…"
+
+    match ($phabricator_revisions | length) {
+      0 => {
+        log warning "no revisions detected against bug, expected 1; forgoing local patch application"
+      }
+      1 => {
+        let revision_id = $phabricator_revisions | first --strict | get revision_id
+        mut cmd_and_args = ['moz-phab' 'patch' $'D($revision_id)']
         if $moz_phab_patch_apply_to_here {
           $cmd_and_args = $cmd_and_args | append ['--apply-to=here']
         }
@@ -200,12 +205,12 @@ export def "commandeer-updatebot-bug" [
         run-external ...$cmd_and_args
       }
       $len => {
-        for revision in $phabricator_patches {
+        for revision in $phabricator_revisions {
           log warning $revision
         }
         log warning ([
-          $"($len) patches detected against bug, expected 1; "
-          "forgoing local patch application"
+          $"($len) revisions detected against bug, expected 1; "
+          "forgoing local revision application"
         ] | str join)
       }
     }
