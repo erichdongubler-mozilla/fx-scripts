@@ -3,6 +3,9 @@ use std/log
 const BUGZILLA = path self "../bugzilla.nu"
 use $BUGZILLA
 
+const PHABRICATOR = path self "../phabricator.nu"
+use $PHABRICATOR
+
 const TIME = path self '../time.nu'
 use $TIME
 
@@ -72,6 +75,7 @@ export def "commandeer-updatebot-bug" [
   bug: oneof<nothing, int>@"nu-complete updatebot bug cts" = null,
   --dl-try-run-reports = true,
   --dl-try-run-reports-in-dir: directory = "../wpt/",
+  --commandeer-phabricator-revision = true,
   --moz-phab-patch = true,
   --moz-phab-patch-apply-to-here,
 ] {
@@ -184,6 +188,42 @@ export def "commandeer-updatebot-bug" [
 
         $attachment | select summary | insert revision_id $revision_id
     }
+
+  if $commandeer_phabricator_revision {
+    match ($phabricator_revisions | length) {
+      0 => {
+        log warning "no revisions detected against bug, expected 1; forgoing commandeering"
+      }
+      1 => {
+        let phabricator_revision = $phabricator_revisions | first --strict
+
+        let revision_id = $phabricator_revision.revision_id
+        log info $"commandeering patch ($revision_id)…"
+
+        try {
+          let author = phabricator conduit user whoami
+          phabricator conduit differential revision edit --fields {
+            'objectIdentifier': $'D($revision_id)'
+            'transactions[0][type]': 'author'
+            'transactions[0][value]': $author.phid
+            'transactions[1][type]': 'reviewers.set'
+            'transactions[1][value][0]': 'PHID-PROJ-yhdmz747nl6vhjyl653t' # `webgpu-reviewers`, non-blocking
+          }
+        } catch {|e|
+          log error $"failed to commandeer D($revision_id): ($e)"
+        }
+      }
+      $len => {
+        for revision in $phabricator_revisions {
+          log warning $revision
+        }
+        log warning ([
+          $"($len) revisions detected against bug, expected 1; "
+          "forgoing commandeering"
+        ] | str join)
+      }
+    }
+  }
 
   if $moz_phab_patch {
     log debug "attempting to create patch locally…"
