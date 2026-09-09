@@ -13,7 +13,7 @@ def is-original-top-level-non-reply-msg [
   )
 }
 
-# Print a permalink to my last top-level message in a Matrix room.
+# Print a permalink to the last top-level message a `--sender` posted in a Matrix room.
 #
 # You will need an access token for an account that has access to `--room`, stored as text file
 # (i.e., `~/.config/matrix/token`) with safe permissions (i.e., Unix mode 0600). Note that a Matrix
@@ -27,6 +27,9 @@ export def last-link [
   # The room to look up `--sender`'s last message.
   --access-token-file: path = ~/.config/matrix/token,
   # The file containing your personal access token.
+  --sender: oneof<string, nothing> = null,
+  # Whose messages to look for, i.e. `@someone:mozilla.org`. Defaults to the token's own account,
+  # looked up via Matrix's `/v3/account/whoami` endpoint (if necessary).
   --pages: int = 20,
   # How many 100-event windows to scan backwards.
   --host: string = $DEFAULT_HOST,
@@ -39,14 +42,16 @@ export def last-link [
       $"($host)/_matrix/client/v3/directory/room/($room | url encode --all)"
   ) | get room_id
 
-  let me = http get --headers $auth_headers $"($host)/_matrix/client/v3/account/whoami"
-    | get user_id
+  let sender = $sender | default {
+    http get --headers $auth_headers $"($host)/_matrix/client/v3/account/whoami"
+      | get user_id
+  }
 
   let base_query = {
     'dir': 'b'
     'limit': 100
     'filter': ({
-      senders: [$me],
+      senders: [$sender],
       types: ["m.room.message"]
     } | to json --raw)
   }
@@ -83,7 +88,7 @@ export def last-link [
   }
 
   if $found == null {
-    print --stderr $"no top-level message from ($me) found in ($room)"
+    print --stderr $"no top-level message from ($sender) found in ($room)"
     exit 1
   }
 
