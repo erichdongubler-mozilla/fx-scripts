@@ -15,9 +15,13 @@ const DEFAULT_HOST = 'https://phabricator.services.mozilla.com/api/'
 # The flat `{path, value}` form doubles as the reconciliation format: layered
 # inputs (convenience flags vs. the `--params` escape hatch) collide at leaf
 # granularity, which is both the finest and the most predictable place to
-# resolve them. Paths are `list<string>` rather than dotted strings so that a
-# key which itself contains a dot — `api.token`, Mozilla's `bugzilla.bug-id` —
-# stays a single path segment.
+# resolve them.
+#
+# Paths are `cell-path`, not dotted strings: a key which itself contains a dot
+# — `api.token`, Mozilla's `bugzilla.bug-id` — stays a single segment, `insert`
+# and `get` take the type directly, and it renders as a literal, so the
+# reconciliation key distinguishes `$.api.token` from `$."api.token"` instead
+# of fusing them the way joining segments on `.` would.
 # ---------------------------------------------------------------------------
 
 # Flatten a nested record into a table of `{path, value}` leaf rows.
@@ -25,28 +29,40 @@ const DEFAULT_HOST = 'https://phabricator.services.mozilla.com/api/'
 # Records recurse. Lists are *leaves*, not recursed into: reconciling at index
 # granularity would let a two-layer override splice a new element 0 in front of
 # a previous layer's stale elements 1..n. Indices are materialized in
-# `conduit encode`, after reconciliation has picked a winning list.
+# `conduit encode`, after reconciliation has picked a winning list. A cell-path
+# *can* address an index — `$.ids.0` keeps `0` as an int member, and `insert`
+# will even grow a list to match — but only for dense rows arriving in order,
+# so keeping lists whole stays both safer and simpler.
 #
 # Null leaves are dropped, which is what makes an unpassed flag contribute
 # nothing. Conduit has no use for an explicit null, so this costs nothing.
 export def "conduit flatten" [
-  path: list<string> = [],
-]: record -> table<path: list<string>, value: any> {
-  items {|key, value|
+  prefix: cell-path = $., # Prepended to every emitted path; recursion's accumulator.
+]: record -> table<path: cell-path, value: any> {
+  # Captured up front: a statement between here and the `items` below would
+  # drain the implicit pipeline input.
+  let record = $in
+
+  # Segments accumulate as a list and become a cell-path only at the leaf.
+  # `$.a | append b` yields the two-element list `[$.a, b]`, not `$.a.b`, so a
+  # cell-path can't serve as its own accumulator.
+  let path = $prefix | split cell-path | get value
+
+  $record | items {|key, value|
     if ($value | describe | str starts-with 'record') {
-      $value | conduit flatten ($path | append $key)
+      $value | conduit flatten ($path | append $key | into cell-path)
     } else if $value == null {
       []
     } else {
-      [{ path: ($path | append $key), value: $value }]
+      [{ path: ($path | append $key | into cell-path), value: $value }]
     }
   } | flatten
 }
 
 # Rebuild a nested record from `{path, value}` leaf rows.
-export def "conduit unflatten" []: table<path: list<string>, value: any> -> record {
+export def "conduit unflatten" []: table<path: cell-path, value: any> -> record {
   reduce --fold {} {|row, acc|
-    $acc | insert ($row.path | into cell-path) $row.value
+    $acc | insert $row.path $row.value
   }
 }
 
@@ -54,6 +70,8 @@ export def "conduit unflatten" []: table<path: list<string>, value: any> -> reco
 export def "conduit encode" []: record -> record {
   conduit flatten | reduce --fold {} {|row, acc|
     let key = $row.path
+      | split cell-path
+      | get value
       | enumerate
       | each {|it| if $it.index == 0 { $it.item } else { $"[($it.item)]" } }
       | str join
@@ -98,7 +116,7 @@ export def "conduit scalar" [value: any]: nothing -> string {
 # reverse would break them.
 export def "conduit reconcile" [
   --on-conflict: string = 'error',
-]: table<source: string, query: record> -> table<path: list<string>, value: any, source: string> {
+]: table<source: string, query: record> -> table<path: cell-path, value: any, source: string> {
   # Captured up front: a statement between here and the `each` below would
   # drain the implicit pipeline input.
   let layers = $in
@@ -112,7 +130,10 @@ export def "conduit reconcile" [
   let grouped = $layers
     | each {|layer| $layer.query | conduit flatten | insert source $layer.source }
     | flatten
-    | group-by {|row| $row.path | str join '.' }
+    # Grouped on the cell-path itself, which `group-by` renders as a literal.
+    # Joining the segments on `.` instead would report `{api: {token: …}}` and
+    # `{'api.token': …}` as the same leaf, silently dropping one of them.
+    | group-by {|row| $row.path }
 
   # Checked before the mapping below rather than inside it: `error make` from
   # within a closure gets wrapped as "Eval block failed with pipeline input",
