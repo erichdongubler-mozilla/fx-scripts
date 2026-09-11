@@ -445,6 +445,8 @@ export def "rm report" [
         }
     }
 
+  log debug $"matches: ($matches_by_task_id | to nuon --indent 2)"
+
   for task_id in $task_ids {
     let matches = $matches_by_task_id | get $task_id
     if ($matches | length) != 1 {
@@ -455,8 +457,6 @@ export def "rm report" [
       return
     }
   }
-
-  log debug $"matches: ($matches_by_task_id | to nuon --indent 2)"
 
   let reports_to_delete = $matches_by_task_id
     | values
