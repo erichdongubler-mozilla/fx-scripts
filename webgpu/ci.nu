@@ -447,11 +447,10 @@ export def "rm report" [
 
   for task_id in $task_ids {
     let matches = $matches_by_task_id | get $task_id
-    if ($matches | length) != ($task_ids | length)  {
+    if ($matches | length) != 1 {
       log warning ([
-        $"count of found task directories \(($matches | length)\)"
-        " != "
-        $"count of task IDs \(($task_ids)\)"
+        $"count of task directories found for ($task_id) \(($matches | length)\)"
+        " != 1; bailing"
       ] | str join)
       return
     }
