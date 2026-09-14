@@ -151,7 +151,7 @@ export def "commandeer-updatebot-bug" [
     flags: (
       $original_bug_state
         | get flags
-        | where $it.name == 'needinfo' and $it.requestee == (bugzilla whoami).name
+        | where $it.name == 'needinfo' and $it.requestee == $name
         | select name type_id id status
         | update status '-'
     )
