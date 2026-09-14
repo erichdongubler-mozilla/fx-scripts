@@ -181,14 +181,42 @@ export def "commandeer-updatebot-bug" [
             | first
             | get rev_id
         } catch {
-          error make --unspanned {
-            msg: ([
-                " `"
-                $phabricator_patch_url_re
-                "` did not match attachment contents:\n\n"
-                $patch_attachment_data
-            ] | str join)
-          }
+          log warning ([
+              "Patch URL regex `"
+              $phabricator_patch_url_re
+              "` did not match attachment contents:\n\n"
+              $revision_attachment_data
+          ] | str join)
+          return null
+        }
+
+        $attachment | select summary | insert revision_id $revision_id
+    }
+
+  if $commandeer_phabricator_revision {
+    match ($phabricator_revisions | length) {
+      0 => {
+        log warning "no revisions detected against bug, expected 1; forgoing commandeering"
+      }
+      1 => {
+        let phabricator_revision = $phabricator_revisions | first --strict
+
+        let revision_id = $phabricator_revision.revision_id
+        log info $"commandeering patch ($revision_id)…"
+
+        try {
+          (
+            phabricator conduit differential revision edit
+              $revision_id
+              --commandeer
+              --reviewers {
+	        set: [
+                  'PHID-PROJ-yhdmz747nl6vhjyl653t' # `webgpu-reviewers`, non-blocking
+                ]
+              }
+          )s
+        } catch {|e|
+          log error $"failed to commandeer D($revision_id): ($e)"
         }
 
         mut cmd_and_args = ['moz-phab' 'patch' $patch_revision_id]
