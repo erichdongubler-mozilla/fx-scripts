@@ -202,15 +202,16 @@ export def "commandeer-updatebot-bug" [
         log info $"commandeering patch ($revision_id)…"
 
         try {
-          let author = phabricator conduit user whoami
-          phabricator conduit differential revision edit --fields {
-            'objectIdentifier': $'D($revision_id)'
-            'transactions[0][type]': 'author'
-            'transactions[0][value]': $author.phid
-            'transactions[1][type]': 'reviewers.set'
-            'transactions[1][value][0]': 'PHID-PROJ-yhdmz747nl6vhjyl653t' # `webgpu-reviewers`, non-blocking
-          }
-        } catch {|e|
+          (
+            phabricator conduit differential revision edit
+              $revision_id
+              --commandeer
+              --reviewers {
+	        set: [
+                  'PHID-PROJ-yhdmz747nl6vhjyl653t' # `webgpu-reviewers`, non-blocking
+                ]
+              }
+          )
           log error $"failed to commandeer D($revision_id): ($e)"
         }
       }
