@@ -52,6 +52,7 @@ def write-credentials [
   $present | save --force $credentials_file
 
   if $nu.os-info.name != "windows" {
+    # TODO: Handle this not working, warn that user needs to set perms.
     ^chmod 600 $credentials_file
   }
 }
