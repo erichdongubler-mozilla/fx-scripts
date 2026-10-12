@@ -1,5 +1,5 @@
 const DEFAULT_HOST = "https://mozilla.modular.im"   # mozilla.org/.well-known/matrix/client
-const DEFAULT_CREDENTIALS_FILE = "~/.config/matrix/last-link-credentials.nuon"
+const DEFAULT_CREDENTIALS_FILE = "~/.config/matrix/last-link-credentials.toml"
 
 # `mozilla.modular.im` delegates auth to a Matrix Authentication Service (MSC3861), so the only
 # durable credential a CLI can hold is an OAuth refresh token. These are the scopes MSC2967 defines
