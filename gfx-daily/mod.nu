@@ -9,8 +9,6 @@ const MATRIX_DEVICE_SCOPE_PREFIX = "urn:matrix:org.matrix.msc2967.client:device:
 
 const FORM = "application/x-www-form-urlencoded"
 
-# Discover the homeserver's authorization server. Done on every run rather than cached, so that a
-# homeserver migrating to a different issuer heals itself instead of failing cryptically.
 def auth-metadata [
   host: string,
 ] {
@@ -53,8 +51,6 @@ def write-credentials [
   mkdir ($credentials_file | path dirname)
   $present | save --force $credentials_file
 
-  # A refresh token grants full account access, so keep it owner-only. Windows profile
-  # directories are already owner-only by ACL, and it has no `chmod`.
   if $nu.os-info.name != "windows" {
     ^chmod 600 $credentials_file
   }
