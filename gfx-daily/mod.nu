@@ -45,8 +45,13 @@ def write-credentials [
   credentials_file: path,
   credentials: record,
 ] {
+  let present = $credentials
+    | transpose key value
+    | where value != null
+    | transpose --header-row --as-record
+
   mkdir ($credentials_file | path dirname)
-  $credentials | save --force $credentials_file
+  $present | save --force $credentials_file
 
   # A refresh token grants full account access, so keep it owner-only. Windows profile
   # directories are already owner-only by ACL, and it has no `chmod`.
