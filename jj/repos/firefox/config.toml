@@ -5,7 +5,7 @@
 # consider sharing upstream!
 
 fsmonitor.backend = "watchman"
-# fsmonitor.watchman.register-snapshot-trigger = true
+fsmonitor.watchman.register-snapshot-trigger = false
 
 [aliases]
 "trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
