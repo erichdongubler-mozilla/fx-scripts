@@ -4,14 +4,17 @@
 # <https://github.com/erichdongubler-mozilla/fx-scripts>. If you need to edit it,
 # consider sharing upstream!
 
-fsmonitor.backend = "watchman"
-fsmonitor.watchman.register-snapshot-trigger = false
-
 [aliases]
 "trains" = ["log", "--revisions=show_fork_point(trains() | @)"]
 
 [colors]
 "erichdongubler_moz_patch description" = "bright black"
+
+[fsmonitor]
+backend = "watchman"
+
+[fsmonitor.watchman]
+register-snapshot-trigger = false
 
 [git]
 fetch = ["origin", "upstream"]
