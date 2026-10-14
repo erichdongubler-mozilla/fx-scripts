@@ -17,7 +17,6 @@ auto-track-bookmarks = "*"
 "trunk()" = "main@upstream"
 
 [template-aliases]
-
 "moz_description_first_line" = "moz_description_first_line(self)"
 "moz_description_first_line(commit)" = '''
 replace(
@@ -48,5 +47,5 @@ commit
   .join(' ')
 '''
 
-"erichdongubler_log_compact_description_line(commit)" = 'moz_description_first_line(commit)'
+"erichdongubler_log_compact_description_line(commit)" = "moz_description_first_line(commit)"
 "erichdongubler_log_compact_extra_refs(commit)" = 'label("erichdongubler_moz_patch", moz_phabricator_patches(commit))'

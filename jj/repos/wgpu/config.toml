@@ -14,7 +14,7 @@ builtin_immutable_heads()
 """
 
 [git]
-fetch = ["origin", "upstream"]
+fetch = ["upstream", "origin"]
 push = "origin"
 
 [fix.tools.taplo]
