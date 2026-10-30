@@ -45,6 +45,8 @@ export def "bindings begin-revendor" [
     }
   }
 
+  cargo fetch
+
   let wgpu_crates = (
     crates-from-bindings-moz.yaml
       --moz-yaml $moz_yaml
