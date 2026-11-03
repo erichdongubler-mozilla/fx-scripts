@@ -21,7 +21,7 @@ backend = "watchman"
 register-snapshot-trigger = false
 
 [git]
-fetch = ["origin", "upstream"]
+fetch = ["origin", "private", "upstream"]
 
 [remotes.origin]
 auto-track-bookmarks = "*"
