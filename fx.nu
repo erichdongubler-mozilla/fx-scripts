@@ -44,9 +44,9 @@ export def "bootstrap lines-to-disable" [] {
 	]
 }
 
-export def "cargo-vet-check-output" [
+export def "mach-cargo-vet-check-output" [
 ]: nothing -> record<conclusion: string, failures: table<any>, suggest: record<suggestions: table<name: string, suggested_criteria: list<string>, suggested_diff: record<from: oneof<string, nothing>, to: string>>>> {
-	let output = cargo vet check --output-format json | complete
+	let output = mach --quiet cargo vet check --output-format json | complete
 	let exit_code = $output.exit_code
 
 	let output_json = $output.stdout | from json
@@ -94,12 +94,12 @@ export def "certify-automatically" [
     # The Bugzilla bug number to use for a revision message. If unspecified, uses `???????` in
     # rendered commit message.
 ]: nothing -> oneof<string, nothing> {
-    cargo-vet-check-output | get suggest.suggestions | certify-from-cargo-vet-check-suggestions
+    mach-cargo-vet-check-output | get suggest.suggestions | certify-from-cargo-vet-check-suggestions
 }
 
 # Certify Rust crates a la `certify`, but en masse from `cargo vet check` `suggestions`.
 #
-# It is recommended that you use this with `fx cargo-vet-check-output` if you know what you're
+# It is recommended that you use this with `fx mach-cargo-vet-check-output` if you know what you're
 # doing, or use `certify-automatically` instead.
 export def "certify-from-cargo-vet-check-suggestions" [
 	--reviewers (-r): list<string> = [],
