@@ -212,6 +212,7 @@ export def --env "workspace create" [
   # `--sparse-type` is not `full` (the default).
   --add-sparse-patterns: list<string> = [],
   --no-change-cwd,
+  --or-use-existing,
 ]: nothing -> nothing {
   use std
 
@@ -238,6 +239,27 @@ export def --env "workspace create" [
 
   match $vcs {
     "jj" => {
+      let current_workspace = (
+        jj workspace list --template 'json({"name" => name, "root" => root}) ++ "\n"'
+          | from json --objects
+          | where name == $name
+          | first
+      )
+      if ($current_workspace != null) {
+        if $or_use_existing {
+          std log info ([
+            $"workspace `($current_workspace.name)` already exists at path: "
+            $current_workspace.root
+          ] | str join)
+          if not $no_change_cwd {
+            cd $current_workspace.root
+          }
+          return
+        } else {
+          # NOTE: This is fine; we'll get an error from `jj workspace create`
+        }
+      }
+
       let parent_dir = $specified_parent_dir | default { jj workspace root | path dirname }
       if $parent_dir == "" {
         mut msg: oneof<string, nothing> = null
